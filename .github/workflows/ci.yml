@@ -38,7 +38,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         run: |
           mkdir -p _site
-          cp index.html style.css game.js renderer.js physics.js _site/
+          cp index.html style.css game.js renderer.js physics.js training.js _site/
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
         with:
