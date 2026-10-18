@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect} from './fixture.js';
 async function start(page){await page.goto('/');await page.getByRole('button',{name:'開始練習',exact:true}).click();await expect(page.locator('#setup')).not.toBeVisible();}
 test('renders a scene and switches all four cameras',async({page},info)=>{const errors=[];page.on('pageerror',e=>errors.push(e.message));await start(page);await expect(page.locator('#world')).toBeVisible();for(const label of ['斜俯視','正上方','跟車','第一人稱']){await page.getByRole('button',{name:label,exact:true}).click();await page.screenshot({path:info.outputPath(`${label}.png`)});}expect(errors).toEqual([]);});
 test('drives, brakes before shifting, steers and resets',async({page})=>{await start(page);await page.getByRole('button',{name:'D',exact:true}).click();const gas=page.locator('#throttle'),pos=await gas.boundingBox();await page.mouse.move(pos.x+pos.width/2,pos.y+pos.height/2);await page.mouse.down();await expect(page.locator('#speed')).not.toHaveText('0.0');await page.getByRole('button',{name:'R',exact:true}).click(); // clicking releases the pedal: coast to a stop before shifting

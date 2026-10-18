@@ -7,5 +7,18 @@ const offset=CAR.wheelbase/2;let rx=s.x-Math.sin(s.angle)*offset,rz=s.z-Math.cos
 export function scenario(level='normal',side=1){const length={easy:8,normal:6.5,hard:5.5}[level]||6.5;return {length,side,curb:5*side,target:{x:3.8*side,z:0,width:2.2,length},obstacles:[{x:3.8*side,z:length/2+2.4,angle:0},{x:3.8*side,z:-length/2-2.4,angle:0}],start:{x:.6*side,z:length/2+2.3,angle:0,speed:0,steer:0,gear:'P'}};}
 export function collision(s,scene){const p=corners(s);return p.some(v=>v.x*scene.side>=5||v.x*scene.side<=-8||Math.abs(v.z)>24)||scene.obstacles.some(v=>overlap(p,corners(v)));}
 export function metrics(s,scene){const p=corners(s),angle=Math.abs(Math.atan2(Math.sin(s.angle),Math.cos(s.angle)))*180/Math.PI;return {angle,curb:5-Math.max(...p.map(v=>v.x*scene.side)),inside:p.every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2&&Math.abs(v.z)<scene.length/2),stopped:Math.abs(s.speed)<.05};}
-export function result(s,scene,stats){const m=metrics(s,scene),passed=m.inside&&m.angle<8&&m.stopped;return {...m,passed,score:passed?Math.max(0,Math.round(100-stats.hits*20-Math.max(0,stats.corrections-2)*4-m.angle*1.5-Math.abs(m.curb-.3)*20)):0};}
+// Direction follows the selected gear. S/down is reverse gas in R, brake elsewhere.
+export function drivingInput(keys,gear,{gas=false,brake=false,slow=true}={}){
+const down=keys.has('s')||keys.has('arrowdown');
+return {turn:Number(keys.has('arrowright')||keys.has('d'))-Number(keys.has('arrowleft')||keys.has('a')),throttle:gas||keys.has('w')||keys.has('arrowup')||(gear==='R'&&down),brake:brake||keys.has(' ')||(gear!=='R'&&down),slow};
+}
+export function result(s,scene,stats,{exam=false}={}){
+const m=metrics(s,scene),margin=exam?0:.12,angleLimit=exam?8:12;
+const inside=corners(s).every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2+margin&&Math.abs(v.z)<scene.length/2+margin);
+const passed=inside&&m.angle<angleLimit&&m.stopped;
+const position=55*clamp(1-Math.hypot((s.x-scene.target.x)/2.5,s.z/(scene.length/2)),0,1);
+const alignment=25*clamp(1-m.angle/60,0,1),curb=20*clamp(1-Math.abs(m.curb-.3)/1.8,0,1);
+const penalty=exam?stats.hits*20+Math.max(0,stats.corrections-2)*4:Math.min(16,stats.hits*4)+Math.min(6,Math.max(0,stats.corrections-6));
+return {...m,inside,passed,angleLimit,score:Math.max(0,Math.round(position+alignment+curb-penalty)),breakdown:{position:Math.round(position),alignment:Math.round(alignment),curb:Math.round(curb),penalty}};
+}
 

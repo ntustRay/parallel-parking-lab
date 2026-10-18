@@ -1,0 +1,23 @@
+import fs from 'node:fs/promises';
+import {pathToFileURL} from 'node:url';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
+const [round='02',width='1440',height='960',state='driver']=process.argv.slice(2);
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
+const page=await browser.newPage({viewport:{width:Number(width),height:Number(height)},deviceScaleFactor:1});
+const errors=[];page.on('pageerror',e=>errors.push(e.message));
+// Serve the local build in-process, including environments with loopback blocked.
+await page.route('http://127.0.0.1:4173/**',async route=>{const url=new URL(route.request().url());const name=url.pathname==='/'?'index.html':url.pathname.slice(1);if(name.includes('..'))return route.abort();try{await route.fulfill({body:await fs.readFile(new URL('../'+name,import.meta.url)),contentType:name.endsWith('.css')?'text/css':name.endsWith('.js')?'text/javascript':'text/html'});}catch{await route.fulfill({status:404,body:'Not found'});}});
+await page.goto('http://127.0.0.1:4173');
+if(state!=='setup')await page.getByRole('button',{name:'開始練習',exact:true}).click();
+if(state==='reverse')await page.locator('[data-gear=R]').click();
+if(state==='mirror')await page.locator('.mirror-right').click();
+if(state==='left')await page.locator('#look-left').click();
+if(state==='top')await page.locator('[data-view=top]').click();
+if(state==='result')await page.locator('#finish').click();
+if(state==='focus')await page.locator('#hud-toggle').click();
+await page.waitForTimeout(700);
+await fs.mkdir('review-screenshots',{recursive:true});
+const file=`review-screenshots/round-${round}-${width}x${height}-${state}.png`;
+await page.screenshot({path:file});
+const layout=await page.evaluate(()=>({viewport:[innerWidth,innerHeight],overflow:document.documentElement.scrollWidth>innerWidth,items:[...document.querySelectorAll('header,.camera,.coach,.telemetry,.mirror,.look-controls,footer,#steer,#throttle,#brake,#finish,#reset,[data-gear]')].filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none'&&!e.closest('[hidden]')).map(e=>{const r=e.getBoundingClientRect();return {name:e.id||e.className,x:Math.round(r.x),y:Math.round(r.y),width:Math.round(r.width),height:Math.round(r.height)};})}));
+console.log(JSON.stringify({file,errors,...layout},null,2));await browser.close();
