@@ -1,6 +1,6 @@
 // Small dependency-free 3D painter. Coordinates are metres, +Z is road direction.
 import {CAR,step} from './physics.js';
-const add=(a,b)=>a.map((v,i)=>v+b[i]),sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>a.map(v=>v/Math.hypot(...a));
+const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>a.map(v=>v/Math.hypot(...a));
 const shade=(hex,k)=>{const n=parseInt(hex.slice(1),16);return `rgb(${[n>>16,(n>>8)&255,n&255].map(v=>Math.min(255,Math.round(v*k))).join(',')})`;};
 export class Renderer{
 constructor(canvas){this.canvas=canvas;this.ctx=canvas.getContext('2d');this.camera=[-13,17,-19];this.view='orbit';this.resize();window.addEventListener('resize',()=>this.resize());}
@@ -10,7 +10,7 @@ poly(points,color){const ps=points.map(p=>this.project(p));if(ps.some(p=>!p))ret
 quad(x,z,w,l,color,y=.015){this.poly([[x-w/2,y,z-l/2],[x+w/2,y,z-l/2],[x+w/2,y,z+l/2],[x-w/2,y,z+l/2]],color);}
 box(x,y,z,w,h,l,color,angle=0){const transform=(a,b,c)=>[x+a*Math.cos(angle)+c*Math.sin(angle),y+b,z-a*Math.sin(angle)+c*Math.cos(angle)];const p=[[-w/2,0,-l/2],[w/2,0,-l/2],[w/2,0,l/2],[-w/2,0,l/2],[-w/2,h,-l/2],[w/2,h,-l/2],[w/2,h,l/2],[-w/2,h,l/2]].map(v=>transform(...v));for(const [indices,k]of [[[0,1,5,4],.7],[[1,2,6,5],.83],[[2,3,7,6],.86],[[3,0,4,7],.75],[[4,5,6,7],1.06]]){const saved=this.layer;this.layer=0;this.poly(indices.map(i=>p[i]),shade(color,k));this.layer=saved;}}
 line(points,color,width=2){const ps=points.map(p=>this.project(p));if(ps.some(p=>!p))return;this.queue.push({ps,color,line:true,width,layer:-1,depth:ps.reduce((a,b)=>a+b[2],0)/ps.length-.05});}
-car(s,color,player=false){const a=s.angle,part=(x,y,z,w,h,l,c,turn=0)=>this.box(s.x+x*Math.cos(a)+z*Math.sin(a),y,s.z-x*Math.sin(a)+z*Math.cos(a),w,h,l,c,a+turn);const ground=CAR.length;part(0,.02,0,2.02,.015,4.7,'#4b6266'); // contact shadow
+car(s,color,player=false){const a=s.angle,part=(x,y,z,w,h,l,c,turn=0)=>this.box(s.x+x*Math.cos(a)+z*Math.sin(a),y,s.z-x*Math.sin(a)+z*Math.cos(a),w,h,l,c,a+turn);part(0,.02,0,2.02,.015,4.7,'#4b6266'); // contact shadow
 for(const x of [-.87,.87])for(const z of [-1.35,1.35]){const turn=player&&z>0?s.steer*CAR.maxSteer:0;part(x,.22,z,.24,.54,.65,'#25313a',turn);part(x*1.025,.33,z,.25,.29,.38,'#9baeb0',turn);}
 part(0,.44,0,1.8,.52,4.5,color);part(0,.94,-.1,1.53,.64,2.15,'#294752');part(0,1.58,-.15,1.5,.09,1.3,color);part(0,.93,1.6,1.72,.12,1.15,color);part(0,.94,-1.75,1.72,.1,.8,color);
 for(const x of [-.91,.91]){part(x,1.03,.6,.2,.15,.31,color);part(x*.78,.75,2.26,.43,.16,.025,'#f5e5af');part(x*.78,.75,-2.26,.45,.13,.025,player&&s.speed<0?'#fff6d7':'#d76b58');}part(0,.58,2.26,.67,.16,.03,'#283943');part(0,.6,-2.26,.6,.16,.025,'#e7e9df');
@@ -21,7 +21,7 @@ let eye,target;const f=[Math.sin(s.angle),0,Math.cos(s.angle)],r=[Math.cos(s.ang
 this.camera=eye;this.forward=norm(sub(target,eye));this.right=norm(cross([0,1,0],this.forward));this.up=cross(this.forward,this.right);this.focal=Math.min(w,h)*1.32;if(w<650&&this.view==='orbit')this.focal=h*.8;this.queue=[];
 // Tiles keep near-plane clipping bounded, and provide depth for all viewing angles.
 this.layer=-3;for(let x=-32;x<33;x+=4)for(let z=-52;z<64;z+=4)this.quad(x,z,4.01,4.01,'#acbca3',-.07);
-this.layer=-2;for(let z=-50;z<62;z+=3){this.quad(-1.5*side,z,13,3.01,'#70838a',0);this.quad(7*side,z,3.8,3.01,'#c9cbbd',.05);this.box(5.1*side,.02,z,.22,.2,3,'#e8e7d7');if(z%6===0)this.quad(-2.5*side,z,.1,2.4,'#dce0ce',.018);this.quad(-7.7*side,z,.09,3.01,'#d3d8c8',.018);}
+this.layer=-2;for(let z=-50;z<62;z+=3){this.quad(-1.5*side,z,13,3.01,'#70838a',0);this.quad(7*side,z,3.8,3.01,'#c9cbbd',.05);this.box(5.1*side,.02,z,.22,.2,3,'#e8e7d7');this.layer=-1;if(z%6===0)this.quad(-2.5*side,z,.1,2.4,'#dce0ce',.018);this.quad(-7.7*side,z,.09,3.01,'#d3d8c8',.018);this.layer=-2;}
 for(let z=-26;z<=40;z+=9){this.tree(7.3*side,z,3.2);this.box(8.5*side,0,z+3,.16,4.7,.16,'#647c7d');this.box(7.9*side,4.5,z+3,1.4,.12,.2,'#647c7d');this.box(7.45*side,4.43,z+3,.5,.07,.32,'#fff4cc');}
 for(let i=0;i<11;i++){const z=-35+i*9,ht=4+(i*7%5);this.box(13.7*side,0,z,7,ht,7,['#d2c8b2','#a8b7b4','#d8d5c3','#b5c1ba'][i%4]);for(let y=1.5;y<ht-.5;y+=1.6)for(let dz=-2.3;dz<=2.4;dz+=1.7)this.box(10.15*side,y,z+dz,.03,.9,.85,'#7c999f');this.box(-14*side,0,z,6,ht+1,7,'#a6b4af');for(let y=1.5;y<ht;y+=1.6)for(let dz=-2.3;dz<2.4;dz+=1.7)this.box(-10.98*side,y,z+dz,.03,.9,.85,'#6f8c94');}
 // Parking bay, painted corners, and quiet center marker.
