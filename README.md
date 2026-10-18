@@ -4,6 +4,8 @@
 
 **[開始練習](https://ntustray.github.io/parallel-parking-lab/)** · [測試與截圖](https://github.com/ntustRay/parallel-parking-lab/actions)
 
+![遊戲實際畫面，由 GitHub Actions Chromium 擷取](https://ntustray.github.io/parallel-parking-lab/screenshots/overview.png)
+
 ## 已實作
 
 - 自製 Canvas 3D renderer：街道、路緣、建築、樹木、車輛與轉動的前輪。
@@ -39,6 +41,7 @@
 npm start
 # http://127.0.0.1:4173
 npm test
+npm run build # 產生 _site/，可交給任意靜態主機
 ```
 
 瀏覽器 E2E：
@@ -49,7 +52,7 @@ npx playwright install chromium
 npx playwright test
 ```
 
-GitHub Actions 會執行物理測試、Chromium E2E，擷取四種視角及手機畫面，保存 HTML report、失敗 trace 和截圖；測試成功後才部署 GitHub Pages。Repository Settings → Pages → Source 設為 GitHub Actions。
+GitHub Actions 會執行物理測試、Chromium E2E，對正式 build 進行測試，擷取四種視角及手機畫面，保存 HTML report、失敗 trace 和截圖；測試成功後才部署 GitHub Pages。Repository Settings → Pages → Source 設為 GitHub Actions。
 
 ## 專案結構
 
@@ -69,6 +72,7 @@ GitHub Actions 會執行物理測試、Chromium E2E，擷取四種視角及手�
 - [x] GitHub Actions 測試、截圖與 Pages 部署。
 - [ ] 根據實玩回饋校準教練參考點與車身軌跡。
 - [x] 低速倒車鏡頭，練習模式排 R 時自動開啟，可在設定關閉。
+- [x] v0.3：獨立倒車鏡頭，發布資產採 content hash，避免更新後混用舊檔。
 - [ ] 駕駛座左右後視鏡。
 - [ ] 不同車型與自訂軸距。
 - [x] v0.2：低速練習、碰撞檢查的示範入位（寬鬆與標準車位），不計入個人成績。
