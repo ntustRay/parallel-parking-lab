@@ -8,6 +8,14 @@
 
 ![第一人稱駕駛座與三面後視鏡，由 GitHub Actions Chromium 擷取](https://ntustray.github.io/parallel-parking-lab/screenshots/driver.png)
 
+## v0.6.0 大型鏡面與新場景
+
+- 桌機預設左右鏡約 518 × 374 px（1440 × 960），較 v0.5 約 3.5 倍面積；點擊仍可再放大。
+- 重建 WebGL 場景：圓弧車身、輪胎與輪框、窗框、街樹、鋪面紋理、日光與投影。
+- 三輻方向盤可直接拖曳；左右各 1.5 圈對應前輪最大 35°，分開顯示輪圈圈數與前輪角度。鍵盤保留轉角，X 回正。
+- 單一 WebGL context 與 GPU 鏡面合成；場景靜止時不持續重繪，移動時最多 25 fps。
+- 手機可在練習設定切換視角。[本輪檢查與截圖](docs/v06-review.md)。
+
 ## v0.5.0 駕駛介面
 
 - 放大方向盤控制、P / R / D、油門、煞車與儀表字體，桌機採整合控制台。
@@ -28,7 +36,7 @@
 
 ## 已實作
 
-- 自製 Canvas 3D renderer：街道、路緣、建築、樹木、車輛與轉動的前輪。
+- Three.js WebGL renderer：共享街景與車輛模型，光影、材質與三面鏡在 GPU 合成。
 - Rear-axle bicycle model，4.5 × 1.8 m 車身、2.7 m 軸距、最大 35° 前輪轉角。
 - P / R / D、低速油門、煞車優先、停穩才可換檔、持續方向盤轉角。
 - 四種視角：斜俯視、正上方、跟車、駕駛座。
@@ -42,7 +50,7 @@
 
 | 操作 | 鍵盤 |
 | --- | --- |
-| 方向盤 | ← → / A D；放開後保留轉角 |
+| 方向盤 | 拖曳輪圈或 ← → / A D；放開後保留轉角 |
 | 回正 | X |
 | 油門 | ↑ / W |
 | 煞車 | Space；D / P 時也可用 S / ↓ |
@@ -60,7 +68,7 @@
 
 ## 本機執行
 
-需要 Node.js 22+。遊戲沒有 runtime dependencies，不需要 npm install。
+需要 Node.js 22+。Three.js r180 已隨專案附在 vendor/ 並保留 MIT License，不需 CDN 或 npm install 即可啟動；瀏覽器需支援 WebGL2。
 
 ```sh
 npm start
@@ -85,14 +93,16 @@ GitHub Actions 會執行物理測試、Chromium E2E，對正式 build 進行測�
 | --- | --- |
 | physics.js | 純函式車輛模型、SAT 碰撞、場景與評分 |
 | training.js | 以實際物理模擬規劃無碰撞的示範駕駛 |
-| renderer.js | 3D 投影、場景繪製與四種攝影機 |
+| scene.js | 光影、材質、街道與車輛模型、靜態物件 Instancing |
+| renderer.js | 共享 WebGL context、GPU 鏡面合成與四種攝影機 |
+| steering.js | 輪圈指標拖曳與角度跨界處理 |
 | game.js | 固定步長模擬、操作、教練、UI、成績紀錄 |
 | tests/ | Node.js 原生物理及完整入位測試 |
 | e2e/ | Playwright 使用者流程及響應式截圖 |
 
 ## 迭代清單
 
-目前版本：**0.5.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
+目前版本：**0.6.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
 
 - [x] v0.1：路邊停車、四種視角、即時教練與評分。
 - [x] 煞車優先、停穩換檔、左右側鏡像、接觸碰撞計數。
@@ -102,6 +112,7 @@ GitHub Actions 會執行物理測試、Chromium E2E，對正式 build 進行測�
 - [x] v0.3：獨立倒車鏡頭，發布資產採 content hash，避免更新後混用舊檔。
 - [x] v0.4：第一人稱為預設；三面後視鏡、轉頭觀察、第一人稱主視覺。
 - [x] v0.5：大按鈕、大鏡面、字體與控制台重設；R 檔 S / ↓ 倒退、寬容練習評分與 11 輪截圖迭代。
+- [x] v0.6：預設大型鏡面、WebGL 場景重建、可拖曳三輻方向盤。
 - [ ] 依實玩回饋調整鏡面倍率與方向。
 - [ ] 不同車型與自訂軸距。
 - [x] v0.2：低速練習、碰撞檢查的示範入位（寬鬆與標準車位），不計入個人成績。
@@ -112,4 +123,4 @@ GitHub Actions 會執行物理測試、Chromium E2E，對正式 build 進行測�
 
 玩法參考 [Parking Practice](https://parkingpractice.com/)，程式、介面與場景獨立實作，沒有複製原站素材或原始碼。這是轉向幾何與空間練習，不模擬實車輪胎、懸吊、交通與駕駛觀察，不代表任何地區的官方考照標準。
 
-程式碼採 MIT License。
+程式碼採 MIT License。Three.js 版權聲明見 vendor/THREE-LICENSE.txt。

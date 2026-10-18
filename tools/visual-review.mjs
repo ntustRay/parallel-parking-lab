@@ -4,7 +4,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(proces
 const [round='02',width='1440',height='960',state='driver']=process.argv.slice(2);
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
 const page=await browser.newPage({viewport:{width:Number(width),height:Number(height)},deviceScaleFactor:1});
-const errors=[];page.on('pageerror',e=>errors.push(e.message));
+const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error')errors.push(msg.text().slice(0,2500));});
 // Serve the local build in-process, including environments with loopback blocked.
 await page.route('http://127.0.0.1:4173/**',async route=>{const url=new URL(route.request().url());const name=url.pathname==='/'?'index.html':url.pathname.slice(1);if(name.includes('..'))return route.abort();try{await route.fulfill({body:await fs.readFile(new URL('../'+name,import.meta.url)),contentType:name.endsWith('.css')?'text/css':name.endsWith('.js')?'text/javascript':'text/html'});}catch{await route.fulfill({status:404,body:'Not found'});}});
 await page.goto('http://127.0.0.1:4173');
