@@ -17,7 +17,7 @@ function engine(canvas){
       #include <colorspace_fragment>
     }`});
   overlay.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),overlayMaterial));
-  return {renderer,...createWorld(),lastShadow:0,panes:[],overlay,overlayCamera,overlayMaterial};
+  return {renderer,...createWorld(),pixelRatio:Math.min(devicePixelRatio||1,1.5),slowFrames:0,lastShadow:0,panes:[],overlay,overlayCamera,overlayMaterial};
 }
 
 // One WebGL context renders the windshield and mirror textures. GPU composition
@@ -29,8 +29,17 @@ export class Renderer{
     this.camera=new THREE.PerspectiveCamera(45,1,.06,200);this.resize();window.addEventListener('resize',()=>this.resize());
   }
   resize(){
-    this.w=this.canvas.clientWidth||innerWidth;this.h=this.canvas.clientHeight||innerHeight;this.dpr=Math.min(devicePixelRatio||1,1.5);
+    this.w=this.canvas.clientWidth||innerWidth;this.h=this.canvas.clientHeight||innerHeight;this.dpr=shared.pixelRatio;
     if(this.main){shared.renderer.setPixelRatio(this.dpr);shared.renderer.setSize(this.w,this.h,false);}else this.target.setSize(Math.round(this.w*this.dpr),Math.round(this.h*this.dpr));
+  }
+  adaptQuality(dt){
+    // Keep the mirrors large in CSS; reduce GPU work on slower devices instead.
+    shared.slowFrames=dt>.12?shared.slowFrames+1:Math.max(0,shared.slowFrames-1);
+    if(shared.slowFrames<3||shared.pixelRatio<=.7)return;
+    shared.slowFrames=0;shared.pixelRatio=Math.max(.7,shared.pixelRatio*.8);
+    for(const pane of shared.panes){pane.target.samples=0;pane.resize();}
+    if(shared.sun.shadow.mapSize.x>1024){shared.sun.shadow.mapSize.set(1024,1024);shared.sun.shadow.map?.dispose();shared.sun.shadow.map=null;shared.renderer.shadowMap.needsUpdate=true;}
+    this.resize();
   }
   pointCamera(car){
     const p=new THREE.Vector3(car.x,0,-car.z),f=new THREE.Vector3(Math.sin(car.angle),0,-Math.cos(car.angle)),r=new THREE.Vector3(Math.cos(car.angle),0,Math.sin(car.angle));
@@ -74,3 +83,4 @@ export class Renderer{
     }
   }
 }
+
