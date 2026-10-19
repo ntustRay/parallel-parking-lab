@@ -8,7 +8,8 @@ test('dragging the wheel turns progressively and X recenters wheel and tires',as
   await expect(page.locator('#steer-value')).toHaveText('右 6°');await expect(page.locator('#wheel-value')).toHaveText('方向盤右 0.25 圈');
   await page.screenshot({path:info.outputPath('steering-quarter-turn.png')});await page.mouse.up();
   await page.keyboard.press('x');await expect(page.locator('#steer-value')).toHaveText('回正');await expect(page.locator('#wheel-value')).toHaveText('方向盤置中');
-  await page.locator('#full-right').click();await expect(page.locator('#wheel-value')).toHaveText('方向盤右 1.50 圈');await expect(page.locator('#steer-value')).toHaveText('右 35°');
+  // Hold through both assertions so gradual return cannot race the second read.
+  await page.keyboard.down('ArrowRight');await expect(page.locator('#wheel-value')).toHaveText('方向盤右 1.50 圈');await expect(page.locator('#steer-value')).toHaveText('右 35°');await page.keyboard.up('ArrowRight');await expect(page.locator('#wheel-value')).toHaveText('方向盤置中');
   expect(renderErrors).toEqual([]);
 });
 test('3D cabin wheel keeps its drag target with larger equal side mirrors',async({page})=>{
