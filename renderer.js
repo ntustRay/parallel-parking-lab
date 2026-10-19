@@ -1,5 +1,6 @@
 import {THREE,createWorld,updateWorld} from './scene.js';
 import {CAR} from './physics.js';
+import {CABIN,createCockpit,updateCockpit} from './cockpit.js';
 
 let shared;
 function engine(canvas){
@@ -26,7 +27,8 @@ function engine(canvas){
       #include <colorspace_fragment>
     }`});
   overlay.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),overlayMaterial));
-  return {renderer,...createWorld(),pixelRatio:Math.min(devicePixelRatio||1,1.5),slowFrames:0,lastShadow:0,panes:[],overlay,overlayCamera,overlayMaterial};
+  const state=createWorld();state.cabin=createCockpit();state.world.add(state.cabin);
+  return {renderer,...state,pixelRatio:Math.min(devicePixelRatio||1,1.5),slowFrames:0,lastShadow:0,panes:[],overlay,overlayCamera,overlayMaterial};
 }
 
 // One WebGL context renders the windshield and mirror textures. GPU composition
@@ -55,13 +57,13 @@ export class Renderer{
     let eye,target;this.camera.up.set(0,1,0);const aspect=this.w/this.h;let horizontalFov=65;
     if(this.view==='mirror-left'||this.view==='mirror-right'){
       const sign=this.view==='mirror-left'?-1:1;
-      eye=p.clone().addScaledVector(r,sign*(CAR.width/2+.13)).addScaledVector(f,.58);eye.y=CAR.height*.66;
+      eye=p.clone().addScaledVector(r,sign*(CAR.width/2+.13)).addScaledVector(f,CABIN.mirrorForward);eye.y=CABIN.mirrorHeight;
       target=eye.clone().addScaledVector(f,-12).addScaledVector(r,sign*3.5);target.y+=Math.tan(this.mirrorTilt*Math.PI/180)*12;horizontalFov=64;
     }else if(this.view==='rear'){
       eye=p.clone().addScaledVector(f,-.6);eye.y=1.3;target=eye.clone().addScaledVector(f,-18);target.y=.4;horizontalFov=72;
     }else if(this.view==='driver'){
-      eye=p.clone().addScaledVector(r,-.42).addScaledVector(f,.3);eye.y=CAR.height*.79;
-      const yaw=car.angle+this.lookYaw;target=eye.clone().add(new THREE.Vector3(Math.sin(yaw)*18,-1.1+Math.tan(this.lookPitch)*18,-Math.cos(yaw)*18));horizontalFov=this.fov;
+      eye=p.clone().addScaledVector(r,CABIN.eyeX).addScaledVector(f,CABIN.eyeForward);eye.y=CABIN.eyeHeight;
+      const yaw=car.angle+this.lookYaw,pitch=CABIN.pitch+this.lookPitch;target=eye.clone().add(new THREE.Vector3(Math.sin(yaw)*18,Math.tan(pitch)*18,-Math.cos(yaw)*18));horizontalFov=this.fov;
     }else if(this.view==='top'){
       eye=new THREE.Vector3(.3,31,.001);target=new THREE.Vector3(.3,0,0);this.camera.up.set(0,0,-1);horizontalFov=65;
     }else if(this.view==='chase'){
@@ -69,11 +71,22 @@ export class Renderer{
     }else{
       eye=new THREE.Vector3(-15*(shared.side||1),19,19);target=new THREE.Vector3(shared.side||1,0,-.5);horizontalFov=70;
     }
-    this.camera.aspect=aspect;this.camera.fov=this.view==='driver'&&aspect<1?68:THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontalFov)/2)/aspect));
+    this.camera.aspect=aspect;this.camera.fov=Math.min(this.view==='driver'?90:150,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontalFov)/2)/aspect)));
     this.camera.position.copy(eye);this.camera.lookAt(target);this.camera.updateProjectionMatrix();
+    this.camera.updateMatrixWorld();
+    if(this.main&&this.view==='driver'){
+      const local=new THREE.Vector3(CABIN.wheelX,CABIN.wheelY,CABIN.wheelZ).applyAxisAngle(new THREE.Vector3(0,1,0),-car.angle).add(p);
+      const top=local.clone().add(new THREE.Vector3(0,CABIN.wheelRadius,0)),bottom=local.clone().add(new THREE.Vector3(0,-CABIN.wheelRadius,0));
+      const center=local.project(this.camera),a=top.project(this.camera),b=bottom.project(this.camera);
+      const size=Math.abs(a.y-b.y)*this.h/2;
+      document.body.style.setProperty('--wheel-x',`${(center.x+1)*this.w/2}px`);document.body.style.setProperty('--wheel-y',`${(1-center.y)*this.h/2}px`);document.body.style.setProperty('--wheel-size',`${size}px`);
+      document.body.style.setProperty('--wheel-visible',center.z>-1&&center.z<1&&Math.abs(center.x)<1.5?'visible':'hidden');
+    }
   }
   draw(car,scenario,options={}){
     updateWorld(shared,car,scenario,options);this.pointCamera(car);shared.player.visible=this.view!=='driver'&&this.view!=='rear';
+    shared.cabin.visible=this.view==='driver';
+    if(shared.cabin.visible){shared.cabin.position.copy(shared.player.position);shared.cabin.rotation.y=-car.angle;updateCockpit(shared.cabin,car,scenario);}
     const gpu=shared.renderer;
     const shadowKey=[car.x,car.z,car.angle,car.steer,scenario.side,scenario.length].join(':');
     if(shadowKey!==shared.shadowKey&&performance.now()-shared.lastShadow>130){gpu.shadowMap.needsUpdate=true;shared.lastShadow=performance.now();shared.shadowKey=shadowKey;}

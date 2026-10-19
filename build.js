@@ -1,5 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
-const modules=['physics.js','training.js','steering.js','scene.js','renderer.js','game.js'];
+const modules=['physics.js','training.js','steering.js','view.js','scene.js','cockpit.js','renderer.js','game.js'];
 const sources=Object.fromEntries([...modules,'style.css','index.html'].map(f=>[f,fs.readFileSync(f,'utf8')]));
 const hash=createHash('sha256').update(JSON.stringify(sources)).update(fs.readFileSync('vendor/three.module.min.js')).update(fs.readFileSync('vendor/three.core.min.js')).digest('hex').slice(0,12);
 const output=path.resolve('_site');fs.mkdirSync(output,{recursive:true});

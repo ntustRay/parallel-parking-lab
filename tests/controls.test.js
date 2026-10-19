@@ -1,12 +1,20 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {drivingInput,step,scenario,result} from '../physics.js';
-test('S and down accelerate backwards only in R; space always brakes',()=>{
-for(const key of ['s','arrowdown']){
-const reverse=drivingInput(new Set([key]),'R');assert.ok(reverse.throttle);assert.equal(reverse.brake,false);
-assert.ok(step({...scenario().start,gear:'R'},reverse,1/120).speed<0);
-assert.ok(drivingInput(new Set([key]),'D').brake);
-assert.ok(drivingInput(new Set([key,' ']),'R').brake);
+test('W/up is gas and S/down/space brakes in every gear, including reverse',()=>{
+for(const gear of ['P','D','R']){
+  for(const key of ['s','arrowdown',' ']){
+    const input=drivingInput(new Set([key]),gear);assert.equal(input.throttle,false);assert.equal(input.brake,true);
+    const initial={...scenario().start,gear,speed:gear==='R'?-.5:.5};
+    assert.ok(Math.abs(step(initial,input,1/120).speed)<.5);
+    assert.equal(step({...initial,speed:0},input,1/120).speed,0);
+  }
+  for(const key of ['w','arrowup']){
+    const input=drivingInput(new Set([key]),gear);assert.equal(input.throttle,true);assert.equal(input.brake,false);
+    const next=step({...scenario().start,gear},input,1/120);
+    assert.equal(Math.sign(next.speed),gear==='D'?1:gear==='R'?-1:0);
+    assert.equal(step({...next,speed:0},drivingInput(new Set([key,'s']),gear),1/120).speed,0);
+  }
 }
 });
 test('practice gives geometry feedback outside the bay without claiming a pass',()=>{

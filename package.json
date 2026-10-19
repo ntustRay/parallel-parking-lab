@@ -1,12 +1,12 @@
 {
   "name": "parallel-parking-lab",
-  "version": "0.7.0",
+  "version": "0.8.1",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
     "build": "node build.js",
+    "build:offline": "node tools/build-offline.mjs",
     "start": "node server.js"
   }
 }
-

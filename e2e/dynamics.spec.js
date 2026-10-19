@@ -1,5 +1,5 @@
 import {test,expect} from './fixture.js';
-async function start(page){await page.goto('/');await page.getByRole('button',{name:'開始練習',exact:true}).click();}
+async function start(page){await page.goto('/');await page.getByRole('button',{name:'開始練習',exact:true}).click();await page.locator('#hud-toggle').click();}
 const speed=async page=>Number(await page.locator('#speed').textContent());
 test('D and R creep without gas, Space holds still and release resumes motion',async({page})=>{
   await start(page);
@@ -14,15 +14,11 @@ test('D and R creep without gas, Space holds still and release resumes motion',a
   await page.locator('[data-gear=P]').click();await page.keyboard.up('Space');
   await expect(page.locator('#drive-state')).toHaveText('停車鎖定');await expect(page.locator('#speed')).toHaveText('0.0');
 });
-test('releasing the moving wheel returns it progressively, stationary wheel keeps its angle',async({page})=>{
-  await start(page);await page.locator('#full-right').click();
-  await expect(page.locator('#wheel-value')).toHaveText('方向盤右 1.50 圈');
-  await page.waitForTimeout(200);await expect(page.locator('#wheel-value')).toHaveText('方向盤右 1.50 圈');
-  await page.locator('[data-gear=D]').click();
-  await expect.poll(async()=>await page.locator('#wheel-value').textContent()).not.toBe('方向盤右 1.50 圈');
-  // Release begins visibly off-centre, then converges rather than snapping to zero.
-  await expect(page.locator('#wheel-value')).not.toHaveText('方向盤置中');
-  await expect(page.locator('#wheel-value')).toHaveText('方向盤置中',{timeout:8000});
+test('a small steering input returns progressively after release while parked',async({page})=>{
+ await start(page);for(const key of ['ArrowLeft','ArrowRight']){
+  await page.keyboard.down(key);await expect(page.locator('#steer-value')).not.toHaveText('回正');await page.keyboard.up(key);
+  await expect(page.locator('#wheel-value')).not.toHaveText('方向盤置中');await expect(page.locator('#wheel-value')).toHaveText('方向盤置中',{timeout:4000});await expect(page.locator('#gear-label')).toHaveText('P 停車');
+ }
 });
 test('rendered body, axles, bay lines and tire angles use physics dimensions',async({page})=>{
   await start(page);

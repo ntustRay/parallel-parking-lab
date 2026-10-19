@@ -25,7 +25,7 @@ test('releasing gas coasts toward creep without stopping or reversing',()=>{
   for(const gear of ['D','R']){
     const a=advance(car(gear),{throttle:true},2),b=advance(a,{},1),c=advance(b,{},30);
     assert.ok(Math.abs(b.speed)<Math.abs(a.speed));assert.ok(Math.abs(b.speed)>.85);
-    assert.ok(Math.abs(c.speed)>.8);assert.equal(Math.sign(c.speed),Math.sign(a.speed));
+    assert.ok(Math.abs(c.speed-(gear==='D'?DRIVE.creepForward:-DRIVE.creepReverse))<.001);assert.equal(Math.sign(c.speed),Math.sign(a.speed));
   }
 });
 test('forward/reverse and precision governors preserve continuous speed',()=>{
@@ -34,14 +34,25 @@ test('forward/reverse and precision governors preserve continuous speed',()=>{
   assert.ok(next.speed>3.9&&next.speed<4);
   assert.equal(advance(next,{throttle:true,slow:true},10).speed,DRIVE.precisionLimit);
 });
-test('wheel self-return depends on motion, respects hands and is weaker in reverse',()=>{
-  assert.equal(advance(car('P',{steer:1}),{},3).steer,1);
-  const held=advance(car('D',{steer:1,speed:1}),{holdSteering:true},1);assert.equal(held.steer,1);
-  const forward=advance(car('D',{steer:1,speed:1}),{},.5),reverse=advance(car('R',{steer:1,speed:-1}),{},.5);
-  assert.ok(forward.steer>0&&forward.steer<reverse.steer&&reverse.steer<1);
-  const slow=advance(car('D',{steer:1,speed:.2}),{throttle:.1},.3),fast=advance(car('D',{steer:1,speed:3}),{},.3);
-  assert.ok(fast.steer<slow.steer);
-  let s=car('D',{steer:1,speed:1});for(let i=0;i<600;i++){const next=step(s,{},1/120);assert.ok(next.steer<=s.steer&&next.steer>=0);s=next;}assert.equal(s.steer,0);
+test('release returns from small and large angles on both sides, even while parked',()=>{
+  for(const gear of ['P','D','R'])for(const steer of [-1,-.2,-.005,.005,.2,1]){
+    const initial=car(gear,{steer});
+    assert.equal(advance(initial,{holdSteering:true},1).steer,steer);
+    const a=advance(initial,{},.02),b=advance(a,{},.02);
+    assert.ok(Math.abs(a.steer)<Math.abs(steer));
+    assert.ok(Math.abs(a.steer-b.steer)>Math.abs(steer-a.steer));
+    let s=initial;for(let i=0;i<480;i++){const next=step(s,{},1/120);assert.ok(Math.abs(next.steer)<=Math.abs(s.steer));assert.ok(next.steer===0||Math.sign(next.steer)===Math.sign(steer));s=next;}
+    assert.equal(s.steer,0);
+  }
+});
+
+test('idle creep builds gently without a launch surge and is slower than walking',()=>{
+  for(const gear of ['D','R']){
+    const first=step(car(gear),{},1/120),a=advance(car(gear),{},.5),b=advance(car(gear),{},1),c=advance(car(gear),{},10);
+    assert.ok(Math.abs(first.acceleration)<=DRIVE.creepJerk/120+.00001);
+    assert.ok(Math.abs(a.speed)*3.6<.25);assert.ok(Math.abs(b.speed)*3.6<.8);
+    assert.ok(Math.abs(c.speed)*3.6<=2.35);
+  }
 });
 test('rack takes finite time to travel three turns and X return never snaps',()=>{
   const s=car('P',{steer:-1}),first=step({...s,steerTarget:1},{},1/120);
