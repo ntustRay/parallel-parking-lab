@@ -11,6 +11,7 @@ test('dragging the wheel turns progressively and X recenters wheel and tires',as
   await page.locator('#full-right').click();await expect(page.locator('#wheel-value')).toHaveText('方向盤右 1.50 圈');await expect(page.locator('#steer-value')).toHaveText('右 35°');
   expect(renderErrors).toEqual([]);
 });
-test('default desktop side mirrors are at least 500 by 330 pixels',async({page})=>{
-  await start(page);for(const id of ['mirror-left','mirror-right']){const b=await page.locator('#'+id).boundingBox();expect(b.width).toBeGreaterThanOrEqual(500);expect(b.height).toBeGreaterThanOrEqual(330);}
+test('desktop wheel is larger and compact mirrors still expand',async({page})=>{
+  await start(page);expect((await page.locator('#wheel').boundingBox()).width).toBeGreaterThanOrEqual(280);for(const id of ['mirror-left','mirror-right']){const b=await page.locator('#'+id).boundingBox();expect(b.width).toBeGreaterThanOrEqual(350);expect(b.width).toBeLessThan(450);expect(b.height).toBeLessThan(260);}
 });
+

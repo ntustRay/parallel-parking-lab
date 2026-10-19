@@ -42,3 +42,60 @@ body.startup-failed>:not(#startup-error){display:none!important}
 #startup-error button{padding:12px 24px;background:#173848;color:#f8fcfd;border-radius:12px;font-size:18px;min-height:52px}
 @media(max-height:500px){#startup-error{padding:20px 28px}.startup-mark{display:none}#startup-error h1{margin:0 0 8px;font-size:24px}#startup-error p{margin:0 0 16px;font-size:16px}#startup-error button{min-height:46px;padding:8px 20px}}
 
+/* Driving controls take priority; mirrors retain one-click inspection. */
+#drive-state{display:block;margin-top:8px;color:#c1d6df;font-size:12px;white-space:nowrap}
+@media(min-width:901px) and (min-height:501px){
+  .mirror-left,.mirror-right{width:27vw;max-width:480px}
+  .mirror-left canvas,.mirror-right canvas{height:min(24vh,225px)}
+  footer{grid-template-columns:100px minmax(0,1fr) 160px;min-height:270px;padding:20px;gap:14px}
+  .dashboard{gap:18px}.steering{width:490px;min-width:0;height:220px;padding-left:300px;flex-shrink:1}
+  #wheel{width:280px;height:280px;top:-35px}#wheel-value{width:280px;left:0;bottom:-27px;font-size:13px}
+  .steer-adjust{min-width:160px}.coach,.telemetry,.look-controls{bottom:310px}
+  .gears button{width:44px}.drive{gap:12px}.pedal{width:74px}
+}
+@media(min-width:1151px) and (max-width:1400px) and (min-height:501px){
+  footer{grid-template-columns:85px minmax(0,1fr) 145px;padding:18px}
+  .steering{width:440px;padding-left:265px}#wheel{width:250px;height:250px;top:-20px}#wheel-value{width:250px;bottom:-12px}
+  .dashboard{gap:12px}.pedal{width:68px}.drive{gap:10px}
+}
+@media(min-width:901px) and (max-width:1150px) and (min-height:501px){
+  footer{grid-template-columns:75px minmax(0,1fr) 120px;gap:10px;padding:16px;min-height:250px}
+  .steering{width:375px;padding-left:220px;height:205px}#wheel{width:210px;height:210px;top:-5px}#wheel-value{width:210px;bottom:-10px;font-size:11px}
+  .steer-adjust{min-width:142px}.dashboard{gap:10px}.gears button{width:40px}.pedal{width:58px}.drive{gap:8px}
+  .coach,.telemetry,.look-controls{bottom:290px}
+}
+@media(min-width:651px) and (max-width:900px) and (min-height:501px){
+  .mirror-left,.mirror-right{width:27vw}.mirror-left canvas,.mirror-right canvas{height:160px}
+  footer{min-height:245px;grid-template-columns:65px minmax(0,1fr) 110px}
+  .steering{width:300px;padding-left:175px}#wheel{width:165px;height:165px;top:0}#wheel-value{width:165px;bottom:-15px}
+  .coach,.telemetry,.look-controls{bottom:285px}
+}
+@media(max-width:650px){
+  .mirror-left,.mirror-right{top:146px;width:calc(50% - 18px)}
+  .mirror-left canvas,.mirror-right canvas{height:104px}.mirror-center canvas{height:59px}
+  .coach{top:265px}.steering{height:258px;padding-top:164px}
+  #wheel{width:170px;height:170px;top:-8px}#wheel-value{top:149px;font-size:10px}
+  .look-controls{bottom:370px}.drive{padding-top:24px;gap:12px}.pedal{height:120px}
+  #drive-state{display:none}
+}
+@media(max-width:650px) and (max-height:800px){
+  .mirror-left,.mirror-right{top:140px}.mirror-left canvas,.mirror-right canvas{height:90px}
+  .mirror-center canvas{height:55px}.coach{top:244px}
+  .steering{height:244px;padding-top:148px}#wheel{width:154px;height:154px;top:-7px}#wheel-value{top:132px}
+  .look-controls{bottom:356px}.drive{padding-top:14px}.pedal{height:108px}
+}
+@media(min-width:651px) and (max-height:500px){
+  .mirror-left,.mirror-right{width:25vw}.mirror-left canvas,.mirror-right canvas{height:92px}
+  .mirror-center{width:180px}.mirror-center canvas{height:65px}
+  .look-controls{top:151px}.steering{width:290px;padding-left:154px;height:137px}
+  #wheel{width:146px;height:146px;top:-9px}#wheel-value{width:146px;bottom:-8px}
+  footer{min-height:165px;grid-template-columns:65px minmax(0,1fr) 105px;gap:8px}
+  #drive-state{font-size:9px}.presets button{min-height:40px}
+}
+@media(min-width:1151px) and (min-height:651px) and (max-height:750px){.telemetry{bottom:296px}}
+@media(min-width:651px) and (min-height:501px) and (max-height:650px){.coach,.telemetry{display:none}}
+.mirror-zoom .mirror:not(.expanded),.mirror-zoom .mirror-tip{visibility:hidden}
+@media(min-width:651px) and (min-height:501px) and (max-height:800px){
+  .telemetry{grid-template-columns:1.25fr 1fr;column-gap:8px}
+  .telemetry>div>span{white-space:nowrap}
+}

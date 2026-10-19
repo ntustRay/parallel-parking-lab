@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.min.js';
-import {step} from './physics.js';
+import {step,CAR,frontWheelAngles} from './physics.js';
 export {THREE};
 
 const boxGeometry=new THREE.BoxGeometry(1,1,1);
@@ -35,23 +35,28 @@ export function makeCar(color){
     box(group,trim,side*.9,.43,0,.035,.1,3.7);
   }
   mesh(roundedBox(1.35,.105,1.48,.045),paint,0,1.57,0,1,1,1,group);
-  box(group,trim,0,.53,-2.255,.9,.2,.02);box(group,chrome,0,.65,-2.266,.87,.025,.02);
+  box(group,trim,0,.53,-2.22,.9,.2,.02);box(group,chrome,0,.65,-2.23,.87,.025,.02);
   const lights=[];
   for(const side of [-1,1]){
-    const head=box(group,new THREE.MeshStandardMaterial({color:'#f5f1d9',emissive:'#efe7c7',emissiveIntensity:.45}),side*.6,.76,-2.24,.47,.12,.06);
+    const head=box(group,new THREE.MeshStandardMaterial({color:'#f5f1d9',emissive:'#efe7c7',emissiveIntensity:.45}),side*.6,.76,-2.21,.47,.12,.06);
     head.rotation.y=side*.1;
-    const tail=box(group,new THREE.MeshStandardMaterial({color:'#bc3e35',emissive:'#9c231c',emissiveIntensity:.35}),side*.62,.75,2.24,.46,.12,.05);lights.push(tail);
-    box(group,chrome,side*.57,.52,2.25,.4,.025,.025);
+    const tail=box(group,new THREE.MeshStandardMaterial({color:'#bc3e35',emissive:'#9c231c',emissiveIntensity:.35}),side*.62,.75,2.21,.46,.12,.05);lights.push(tail);
+    box(group,chrome,side*.57,.52,2.23,.4,.025,.025);
   }
-  box(group,material('#e5e7e1'),0,.58,2.265,.43,.11,.02);
+  box(group,material('#e5e7e1'),0,.58,2.235,.43,.11,.02);
   const frontWheels=[];
-  for(const x of [-.88,.88])for(const z of [-1.35,1.35]){
+  for(const x of [-.765,.765])for(const z of [-1.35,1.35]){
     const axle=new THREE.Group();axle.position.set(x,.36,z);group.add(axle);
     const tire=new THREE.Mesh(new THREE.CylinderGeometry(.34,.34,.22,28),rubber);tire.rotation.z=Math.PI/2;tire.castShadow=true;axle.add(tire);
     const rim=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,.025,24),chrome);rim.position.x=Math.sign(x)*.123;rim.rotation.z=Math.PI/2;axle.add(rim);
     const hub=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.035,16),trim);hub.position.x=Math.sign(x)*.14;hub.rotation.z=Math.PI/2;axle.add(hub);
     if(z<0)frontWheels.push(axle);
   }
+  // Scale the entire designed shell into the shared physical envelope.
+  // Body bumpers define the collision length; side mirrors extend beyond body width.
+  group.scale.set(CAR.width/1.8,CAR.height/1.6225,CAR.length/4.5);
+  for(const wheel of frontWheels){wheel.position.z=-CAR.wheelbase/2/group.scale.z;wheel.position.x=Math.sign(wheel.position.x)*CAR.track/2/group.scale.x;}
+  for(const wheel of group.children.filter(v=>v.type==='Group'&&!frontWheels.includes(v))){wheel.position.z=CAR.wheelbase/2/group.scale.z;wheel.position.x=Math.sign(wheel.position.x)*CAR.track/2/group.scale.x;}
   group.userData={frontWheels,lights};return group;
 }
 
@@ -115,24 +120,25 @@ export function buildStreet(state,side){
 export function updateWorld(state,car,scenario,{guides=true,exam=false}={}){
   if(state.side!==scenario.side)buildStreet(state,scenario.side);
   if(state.scenario!==scenario){
-    state.obstacles.forEach(v=>{state.world.remove(v);v.traverse(item=>{if(item.geometry&&![boxGeometry,sphereGeometry,cylinderGeometry].includes(item.geometry))item.geometry.dispose();});});state.obstacles=scenario.obstacles.map((p,i)=>{const v=makeCar(i?'#9b7d61':'#c3c8c7');v.position.set(p.x,0,-p.z);v.rotation.y=-p.angle;state.world.add(v);return v;});
+    for(const v of state.obstacles){state.world.remove(v);v.traverse(item=>{if(item.geometry&&![boxGeometry,sphereGeometry,cylinderGeometry].includes(item.geometry))item.geometry.dispose();});}state.obstacles=scenario.obstacles.map((p,i)=>{const v=makeCar(i?'#9b7d61':'#c3c8c7');v.position.set(p.x,0,-p.z);v.rotation.y=-p.angle;state.world.add(v);return v;});
     state.bay.clear();const tx=scenario.target.x,L=scenario.length,lineMat=new THREE.MeshBasicMaterial({color:'#ece9d2'});
-    for(const x of [tx-1.1,tx+1.1])box(state.bay,lineMat,x,.016,0,.07,.018,L);
-    for(const z of [-L/2,L/2])box(state.bay,lineMat,tx,.017,-z,2.2,.02,.09);
+    for(const x of [tx-scenario.target.width/2,tx+scenario.target.width/2])box(state.bay,lineMat,x,.016,0,.1,.018,L);
+    for(const z of [-L/2,L/2])box(state.bay,lineMat,tx,.017,-z,scenario.target.width,.02,.1);
     state.scenario=scenario;
   }
-  state.player.position.set(car.x,0,-car.z);state.player.rotation.y=-car.angle;for(const wheel of state.player.userData.frontWheels)wheel.rotation.y=-car.steer*35*Math.PI/180;
+  state.player.position.set(car.x,0,-car.z);state.player.rotation.y=-car.angle;const angles=frontWheelAngles(car.steer);for(const wheel of state.player.userData.frontWheels)wheel.rotation.y=-(wheel.position.x<0?angles.left:angles.right);
   state.bay.visible=true;
   const key=[car.x,car.z,car.angle,car.steer].map(n=>n.toFixed(3)).join(':');
   if(guides&&!exam&&state.guideKey!==key){
     const segments=[];let predicted={...car,gear:'R',speed:-.8},previous=null;
     for(let i=0;i<100;i++){
-      predicted=step(predicted,{throttle:true,slow:true},1/30);
-      const a=predicted.angle,point=sign=>[predicted.x+sign*.84*Math.cos(a)-2.1*Math.sin(a),.035,-(predicted.z-sign*.84*Math.sin(a)-2.1*Math.cos(a))];
+      predicted=step(predicted,{throttle:true,slow:true,holdSteering:true},1/30);
+      const a=predicted.angle,point=sign=>[predicted.x+sign*(CAR.width/2-.06)*Math.cos(a)-(CAR.length/2-.1)*Math.sin(a),.035,-(predicted.z-sign*(CAR.width/2-.06)*Math.sin(a)-(CAR.length/2-.1)*Math.cos(a))];
       const pair=[point(-1),point(1)];if(previous)for(let j=0;j<2;j++)segments.push(...previous[j],...pair[j]);if(i%25===0)segments.push(...pair[0],...pair[1]);previous=pair;
     }
-    state.guides.children.forEach(child=>child.geometry.dispose());state.guides.clear();
+    for(const child of state.guides.children)child.geometry.dispose();state.guides.clear();
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(segments,3));state.guides.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:'#e4c471',depthTest:true})));state.guideKey=key;
   }
   state.guides.visible=guides&&!exam;
 }
+

@@ -11,11 +11,12 @@ assert.ok(drivingInput(new Set([key,' ']),'R').brake);
 });
 test('practice gives geometry feedback outside the bay without claiming a pass',()=>{
 const sc=scenario(),stats={hits:0,corrections:0};
-const near=result({x:3.4,z:0,angle:0,speed:0},sc,stats);
+const near=result({x:3.2,z:0,angle:0,speed:0},sc,stats);
 const far=result(sc.start,sc,stats);
 assert.ok(near.score>far.score);assert.ok(near.score>0);assert.equal(near.passed,false);
 });
 test('practice accepts a small line margin while exam keeps strict containment',()=>{
-const sc=scenario(),s={x:3.5,z:0,angle:0,speed:0},stats={hits:0,corrections:0};
+const sc=scenario(),s={x:3.34,z:0,angle:0,speed:0},stats={hits:0,corrections:0};
 assert.equal(result(s,sc,stats).passed,true);assert.equal(result(s,sc,stats,{exam:true}).passed,false);
 });
+

@@ -1,4 +1,5 @@
 import {THREE,createWorld,updateWorld} from './scene.js';
+import {CAR} from './physics.js';
 
 let shared;
 function engine(canvas){
@@ -54,12 +55,12 @@ export class Renderer{
     let eye,target;this.camera.up.set(0,1,0);const aspect=this.w/this.h;let horizontalFov=65;
     if(this.view==='mirror-left'||this.view==='mirror-right'){
       const sign=this.view==='mirror-left'?-1:1;
-      eye=p.clone().addScaledVector(r,sign*1.04).addScaledVector(f,.58);eye.y=1.14;
+      eye=p.clone().addScaledVector(r,sign*(CAR.width/2+.13)).addScaledVector(f,.58);eye.y=CAR.height*.66;
       target=eye.clone().addScaledVector(f,-12).addScaledVector(r,sign*3.5);target.y+=Math.tan(this.mirrorTilt*Math.PI/180)*12;horizontalFov=64;
     }else if(this.view==='rear'){
       eye=p.clone().addScaledVector(f,-.6);eye.y=1.3;target=eye.clone().addScaledVector(f,-18);target.y=.4;horizontalFov=72;
     }else if(this.view==='driver'){
-      eye=p.clone().addScaledVector(r,-.42).addScaledVector(f,.3);eye.y=1.35;
+      eye=p.clone().addScaledVector(r,-.42).addScaledVector(f,.3);eye.y=CAR.height*.79;
       const yaw=car.angle+this.lookYaw;target=eye.clone().add(new THREE.Vector3(Math.sin(yaw)*18,-1.1+Math.tan(this.lookPitch)*18,-Math.cos(yaw)*18));horizontalFov=this.fov;
     }else if(this.view==='top'){
       eye=new THREE.Vector3(.3,31,.001);target=new THREE.Vector3(.3,0,0);this.camera.up.set(0,0,-1);horizontalFov=65;
@@ -83,6 +84,7 @@ export class Renderer{
       const panes=shared.panes.filter(p=>!p.canvas.closest('[hidden]')).sort((a,b)=>Number(a.canvas.parentElement.classList.contains('expanded'))-Number(b.canvas.parentElement.classList.contains('expanded')));
       const zoomed=panes.some(p=>p.canvas.parentElement.classList.contains('expanded'));document.body.classList.toggle('mirror-zoom',zoomed);
       gpu.setScissorTest(true);for(const pane of panes){
+        if(zoomed&&!pane.canvas.parentElement.classList.contains('expanded'))continue;
         const rect=pane.canvas.getBoundingClientRect();if(!rect.width||!rect.height)continue;
         gpu.setViewport(rect.x,this.h-rect.bottom,rect.width,rect.height);gpu.setScissor(rect.x,this.h-rect.bottom,rect.width,rect.height);
         shared.overlayMaterial.uniforms.image.value=pane.target.texture;shared.overlayMaterial.uniforms.size.value.set(rect.width,rect.height);shared.overlayMaterial.uniforms.radius.value=pane.view==='rear'?9:15;
