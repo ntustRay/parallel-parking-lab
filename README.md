@@ -4,7 +4,7 @@
 
 預設就是第一人稱。看左右後視鏡確認車身與路緣的相對位置，轉頭觀察，控制方向盤、油門與煞車，把車慢慢倒進去。繁體中文、免帳號、無時間限制。
 
-**[開始練習](https://ntustray.github.io/parallel-parking-lab/)** · [測試與截圖](https://github.com/ntustRay/parallel-parking-lab/actions)
+**[開始練習](https://ntustray.github.io/parallel-parking-lab/)** · [部署狀態](https://github.com/ntustRay/parallel-parking-lab/actions)
 
 ![v0.8.1 精簡第一人稱畫面](docs/v081-review/driver-1672x941.webp)
 
@@ -110,19 +110,10 @@
 ```sh
 npm start
 # http://127.0.0.1:4173
-npm test
 npm run build # 產生 _site/，可交給任意靜態主機
 ```
 
-瀏覽器 E2E：
-
-```sh
-npm install --no-save --package-lock=false @playwright/test@1.56.1
-npx playwright install chromium
-npx playwright test
-```
-
-GitHub Actions 會執行物理測試、Chromium E2E，對正式 build 進行測試，擷取四種視角、鏡面放大、評分及手機畫面，保存 HTML report、失敗 trace 和截圖；測試成功後才部署 GitHub Pages。Repository Settings → Pages → Source 設為 GitHub Actions。
+目前為開發版，GitHub Actions 僅執行 build 並部署 GitHub Pages，不執行單元測試、瀏覽器 E2E 或自動截圖。既有測試原始檔保留，待操作與畫面穩定後再啟用。Repository Settings → Pages → Source 設為 GitHub Actions。
 
 ## 專案結構
 
