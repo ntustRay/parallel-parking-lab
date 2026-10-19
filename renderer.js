@@ -2,7 +2,15 @@ import {THREE,createWorld,updateWorld} from './scene.js';
 
 let shared;
 function engine(canvas){
-  const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
+  let renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
+  catch(error){
+    document.body.classList.add('startup-failed');
+    const notice=document.createElement('main');notice.id='startup-error';
+    notice.innerHTML='<span class="startup-mark" aria-hidden="true">P</span><h1>3D 場景未能啟動</h1><p>瀏覽器目前無法使用 WebGL 2。請檢查圖形加速設定，或改用支援 WebGL 2 的瀏覽器後再試。</p><button type="button">重新整理</button>';
+    notice.querySelector('button').onclick=()=>location.reload();document.body.append(notice);notice.querySelector('button').focus();
+    throw error;
+  }
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight,false);
   renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.autoClear=false;
