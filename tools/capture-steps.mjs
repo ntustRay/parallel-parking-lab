@@ -1,0 +1,81 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
+const root=path.resolve('_site'),output=path.join(root,'screenshots');
+const {version}=JSON.parse(await fs.readFile('package.json','utf8'));
+const captures=[];
+await fs.mkdir(output,{recursive:true});
+const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
+try{
+  const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});
+  const converter=await browser.newPage();
+  page.setDefaultTimeout(30000);
+  page.on('pageerror',error=>console.error('Screenshot page error:',error.message));
+  // Capture the actual hashed build without a separate HTTP server.
+  await page.route('http://127.0.0.1:4173/**',async route=>{
+    const url=new URL(route.request().url());
+    const file=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
+    if(!file.startsWith(root+path.sep)){await route.fulfill({status:403,body:'Forbidden'});return;}
+    try{
+      const body=await fs.readFile(file);
+      await route.fulfill({body,contentType:({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream'});
+    }catch(error){
+      if(error.code!=='ENOENT')throw error;
+      await route.fulfill({status:404,body:'Not found'});
+    }
+  });
+  async function capture(name,title){
+    // Leave time for the main WebGL scene and all mirrors to redraw.
+    await page.waitForTimeout(500);
+    const png=await page.screenshot();
+    const base64=await converter.evaluate(async data=>{
+      const image=new Image();image.src='data:image/png;base64,'+data;await image.decode();
+      const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+      canvas.getContext('2d').drawImage(image,0,0);
+      return canvas.toDataURL('image/webp',.88).split(',')[1];
+    },png.toString('base64'));
+    const file=name+'.webp';
+    await fs.writeFile(path.join(output,file),Buffer.from(base64,'base64'));
+    captures.push({file,title,viewport:page.viewportSize()});
+    const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),captures};
+    await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
+    await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停 · 步驟截圖</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}figcaption{margin-bottom:10px}</style><h1>慢慢停 · v${version} 步驟截圖</h1><p><a href="../">開始練習</a> · <a href="manifest.json">截圖紀錄</a></p><p>建置：${manifest.commit||'本機'} · ${manifest.capturedAt}</p>${captures.map(item=>`<figure><figcaption>${item.title}（${item.viewport.width} × ${item.viewport.height}）</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);
+    console.log('Screenshot:',file,title);
+  }
+
+  await page.goto('http://127.0.0.1:4173/');
+  await page.locator('#setup[open]').waitFor();
+  await page.evaluate(()=>document.fonts.ready);
+  await capture('01-setup','設定練習');
+  await page.locator('#start').click();
+  await capture('02-driver','第一人稱駕駛座');
+  await page.locator('#hud-toggle').click();
+  await capture('03-align','步驟一：與前車並排');
+  await page.locator('#demo').click();
+  for(const [stage,name,title] of [
+    ['02 / 04','04-reverse','步驟二：朝路緣轉向倒車'],
+    ['03 / 04','05-countersteer','步驟三：反打方向盤'],
+    ['04 / 04','06-straighten','步驟四：回正與微調'],
+  ]){
+    // Wait for a visible demonstration phase; no scoring or behavior assertions.
+    await page.locator('#stage').filter({hasText:stage}).waitFor();
+    await capture(name,title);
+  }
+  await page.locator('#demo').filter({hasText:'再看一次示範'}).waitFor();
+  await capture('07-parked','入位示範結束');
+  await page.locator('.mirror-right').click();
+  await capture('08-mirror','放大右後視鏡');
+  await page.keyboard.press('Escape');
+  await page.locator('#reset').click();
+  await page.locator('#finish').click();
+  await page.locator('#result[open]').waitFor();
+  await capture('09-result','評分畫面（重新開始後直接提交，尚未入位）');
+  await page.locator('#again').click();
+  await page.locator('#hud-toggle').click();
+  await page.setViewportSize({width:390,height:844});
+  await capture('10-mobile','手機第一人稱');
+}finally{
+  await browser.close();
+}

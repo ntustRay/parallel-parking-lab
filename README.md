@@ -6,7 +6,26 @@
 
 **[開始練習](https://ntustray.github.io/parallel-parking-lab/)** · [部署狀態](https://github.com/ntustRay/parallel-parking-lab/actions)
 
-![v0.8.1 精簡第一人稱畫面](docs/v081-review/driver-1672x941.webp)
+![目前第一人稱畫面](https://ntustray.github.io/parallel-parking-lab/screenshots/02-driver.webp)
+
+## 操作步驟截圖
+
+[查看最新完整截圖](https://ntustray.github.io/parallel-parking-lab/screenshots/) · 每次 main 部署會更新；Actions 另保留 14 天 WebP 截圖 artifact。
+
+| 步驟 | 畫面 |
+| --- | --- |
+| 設定練習 | [設定視窗](https://ntustray.github.io/parallel-parking-lab/screenshots/01-setup.webp) |
+| 進入駕駛座 | [第一人稱](https://ntustray.github.io/parallel-parking-lab/screenshots/02-driver.webp) |
+| 1. 與前車並排 | [起始位置](https://ntustray.github.io/parallel-parking-lab/screenshots/03-align.webp) |
+| 2. 朝路緣倒車 | [入位示範](https://ntustray.github.io/parallel-parking-lab/screenshots/04-reverse.webp) |
+| 3. 反打方向盤 | [收進車頭](https://ntustray.github.io/parallel-parking-lab/screenshots/05-countersteer.webp) |
+| 4. 回正與微調 | [平行調整](https://ntustray.github.io/parallel-parking-lab/screenshots/06-straighten.webp) |
+| 入位示範結束 | [停妥畫面](https://ntustray.github.io/parallel-parking-lab/screenshots/07-parked.webp) |
+| 放大後視鏡 | [右後視鏡](https://ntustray.github.io/parallel-parking-lab/screenshots/08-mirror.webp) |
+| 查看評分 | [重新開始後直接提交，尚未入位](https://ntustray.github.io/parallel-parking-lab/screenshots/09-result.webp) |
+| 手機版 | [390 × 844 第一人稱](https://ntustray.github.io/parallel-parking-lab/screenshots/10-mobile.webp) |
+
+截圖由獨立瀏覽器腳本操作介面產生，不執行 E2E、unit test、分數斷言或圖片比對；截圖異常會顯示在 Actions，已產生的畫面仍會保留，並繼續部署遊戲。頁面顯示每次截圖的 commit 與產生時間。
 
 ## 免伺服器試玩
 
@@ -87,7 +106,7 @@
 
 | 操作 | 鍵盤 |
 | --- | --- |
-| 方向盤 | 拖曳輪圈或 ← → / A D；行進時放開自動回正，停止保留轉角 |
+| 方向盤 | 拖曳輪圈或 ← → / A D；放開後由慢到快回正，靜止與倒車也適用 |
 | 回正 | X，漸進回正 |
 | 油門 | ↑ / W |
 | 煞車 | S / ↓ / Space，所有檔位一致 |
@@ -113,7 +132,17 @@ npm start
 npm run build # 產生 _site/，可交給任意靜態主機
 ```
 
-目前為開發版，GitHub Actions 僅執行 build 並部署 GitHub Pages，不執行單元測試、瀏覽器 E2E 或自動截圖。既有測試原始檔保留，待操作與畫面穩定後再啟用。Repository Settings → Pages → Source 設為 GitHub Actions。
+目前為開發版，GitHub Actions 執行 build → 各步驟截圖 → 部署 GitHub Pages。E2E 與 unit test 暫停，等畫面與操作穩定後再啟用；既有測試檔案僅保留。截圖失敗不阻擋部署。Repository Settings → Pages → Source 設為 GitHub Actions。
+
+手動產生同一組截圖（僅需在擷取畫面時安裝瀏覽器）：
+
+```sh
+npm install --no-save --package-lock=false playwright@1.56.1
+npx playwright install chromium
+npm run build
+npm run screenshots
+# 輸出 _site/screenshots/：WebP、圖庫和 manifest.json
+```
 
 ## 專案結構
 
@@ -125,16 +154,17 @@ npm run build # 產生 _site/，可交給任意靜態主機
 | renderer.js | 共享 WebGL context、GPU 鏡面合成與四種攝影機 |
 | steering.js | 輪圈指標拖曳與角度跨界處理 |
 | game.js | 固定步長模擬、操作、教練、UI、成績紀錄 |
-| tests/ | Node.js 原生物理及完整入位測試 |
-| e2e/ | Playwright 使用者流程及響應式截圖 |
+| tools/capture-steps.mjs | 獨立步驟截圖與 WebP 圖庫，不含測試斷言 |
+| tests/ | 暫停使用的 Node.js 測試 |
+| e2e/ | 暫停使用的 Playwright 測試 |
 
 ## 迭代清單
 
-目前版本：**0.7.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
+目前版本：**0.8.1**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
 
 - [x] v0.1：路邊停車、四種視角、即時教練與評分。
 - [x] 煞車優先、停穩換檔、左右側鏡像、接觸碰撞計數。
-- [x] GitHub Actions 測試、截圖與 Pages 部署。
+- [x] GitHub Actions build、步驟截圖與 Pages 部署；測試待穩定後再啟用。
 - [x] 依實際模擬校準教練提示；接著持續收集實玩回饋。
 - [x] 低速倒車鏡頭，練習模式排 R 時自動開啟，可在設定關閉。
 - [x] v0.3：獨立倒車鏡頭，發布資產採 content hash，避免更新後混用舊檔。

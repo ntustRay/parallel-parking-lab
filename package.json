@@ -7,6 +7,7 @@
     "test": "node --test tests/*.test.js",
     "build": "node build.js",
     "build:offline": "node tools/build-offline.mjs",
-    "start": "node server.js"
+    "start": "node server.js",
+    "screenshots": "node tools/capture-steps.mjs"
   }
 }
