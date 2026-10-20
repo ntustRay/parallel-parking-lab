@@ -41,6 +41,8 @@ export function makeCar(color){
   for(const side of [-1,1]){
     quad(group,[[side*base,low,-.99],[side*base,low,1.07],[side*top,high,.63],[side*top,high,-.47]],glass);
     const pillar=box(group,paint,side*.70,1.15,.1,.065,.46,.085);pillar.rotation.z=side*.18;
+    const quarterBase=new THREE.Vector3(side*base,low,.72),quarterTop=new THREE.Vector3(side*top,high,.36),quarterAxis=quarterTop.clone().sub(quarterBase);
+    const quarterPillar=box(group,paint,0,0,0,.045,quarterAxis.length(),.055);quarterPillar.position.copy(quarterBase.add(quarterTop).multiplyScalar(.5));quarterPillar.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),quarterAxis.normalize());
     box(group,trim,side*.795,.91,.05,.035,.035,2.06);
     box(group,chrome,side*(CAR.width/2-.02),.76,.58,.025,.028,.18);box(group,chrome,side*(CAR.width/2-.02),.76,-.49,.025,.028,.18);
     mesh(roundedBox(.205,.135,.275,.04),paint,side*.984,.98,-.64,1,1,1,group);
@@ -153,11 +155,12 @@ export function updateWorld(state,car,scenario,{guides=true,exam=false}={}){
   state.bay.visible=true;
   const key=[car.x,car.z,car.angle,car.steer].map(n=>n.toFixed(3)).join(':');
   if(guides&&!exam&&state.guideKey!==key){
-    const segments=[];let predicted={...car,gear:'R',speed:-.8},previous=null;
+    const segments=[];let predicted={...car,gear:'R',speed:-.8,steerTarget:null,steerVelocity:0};
+    const point=(pose,sign)=>{const a=pose.angle;return [pose.x+sign*CAR.width/2*Math.cos(a)-CAR.length/2*Math.sin(a),.035,-(pose.z-sign*CAR.width/2*Math.sin(a)-CAR.length/2*Math.cos(a))];};
+    let previous=[point(predicted,-1),point(predicted,1)];
     for(let i=0;i<100;i++){
       predicted=step(predicted,{throttle:true,slow:true,holdSteering:true},1/30);
-      const a=predicted.angle,point=sign=>[predicted.x+sign*(CAR.width/2-.06)*Math.cos(a)-(CAR.length/2-.1)*Math.sin(a),.035,-(predicted.z-sign*(CAR.width/2-.06)*Math.sin(a)-(CAR.length/2-.1)*Math.cos(a))];
-      const pair=[point(-1),point(1)];if(previous)for(let j=0;j<2;j++)segments.push(...previous[j],...pair[j]);if(i%25===0)segments.push(...pair[0],...pair[1]);previous=pair;
+      const pair=[point(predicted,-1),point(predicted,1)];for(let j=0;j<2;j++)segments.push(...previous[j],...pair[j]);if(i%25===0)segments.push(...pair[0],...pair[1]);previous=pair;
     }
     for(const child of state.guides.children)child.geometry.dispose();state.guides.clear();
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(segments,3));state.guides.add(new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color:'#e4c471',depthTest:true})));state.guideKey=key;

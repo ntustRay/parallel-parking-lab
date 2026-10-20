@@ -1,7 +1,8 @@
 import {advanceSteering} from './steering.js';
 // Metres, seconds, radians. Exterior dimensions: Toyota Taiwan Corolla Altis.
-// Axles are centred longitudinally; overhang split and rack tuning are approximations.
-export const CAR=Object.freeze({length:4.63,width:1.78,height:1.435,wheelbase:2.7,rear:.965,track:1.53,maxSteer:35*Math.PI/180});
+// Overhangs use Toyota Europe's same-generation Corolla sedan dimension drawing.
+// Eye position, track and steering rack remain simulation approximations.
+export const CAR=Object.freeze({length:4.63,width:1.78,height:1.435,wheelbase:2.7,front:.935,rear:.995,track:1.53,maxSteer:35*Math.PI/180});
 export const DRIVE=Object.freeze({creepForward:.65,creepReverse:.5,precisionCreep:.4,creepAcceleration:.28,creepJerk:.45,precisionLimit:.8,forwardLimit:30/3.6,reverseLimit:12/3.6,forwardAcceleration:1.8,reverseAcceleration:1.2,jerk:2.5,brakeDeceleration:6});
 // Two 3.25 m lanes, with a 2.5 m parking strip on each side.
 export const ROAD=Object.freeze({laneWidth:3.25,parkingWidth:2.5,curb:5,oppositeCurb:-6.5,divider:-.75,curbHeight:.15,sidewalkWidth:3.5});
@@ -61,7 +62,8 @@ export function scenario(level='normal',side=1){
   const {length,width}=BAYS[level]||BAYS.normal;
   const parkedX=(ROAD.curb-CAR.width/2-.3)*side;
   const obstacleZ=length/2+CAR.length/2+.15;
-  return {length,side,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:.6*side,z:obstacleZ-.1,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+  const sideGap=.6;
+  return {length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
 }
 export function collision(s,scene){const p=corners(s);return p.some(v=>v.x*scene.side>=ROAD.curb||v.x*scene.side<=ROAD.oppositeCurb||Math.abs(v.z)>24)||scene.obstacles.some(v=>overlap(p,corners(v)));}
 export function metrics(s,scene){const p=corners(s),angle=Math.abs(Math.atan2(Math.sin(s.angle),Math.cos(s.angle)))*180/Math.PI;return {angle,curb:ROAD.curb-Math.max(...p.map(v=>v.x*scene.side)),inside:p.every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2&&Math.abs(v.z)<scene.length/2),stopped:Math.abs(s.speed)<.05};}

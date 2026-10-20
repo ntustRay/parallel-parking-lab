@@ -52,30 +52,49 @@ try{
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
   await page.locator('#hud-toggle').click();
-  await capture('03-align','步驟一：與前車並排');
   await page.locator('#demo').click();
-  for(const [stage,name,title] of [
-    ['02 / 04','04-reverse','步驟二：朝路緣轉向倒車'],
-    ['03 / 04','05-countersteer','步驟三：反打方向盤'],
-    ['04 / 04','06-straighten','步驟四：回正與微調'],
+  for(const [phase,name,title] of [
+    [0,'03-align','步驟一：並排與直線倒退'],
+    [1,'04-reverse','步驟二：朝路緣轉向'],
+    [2,'05-straight-back','步驟三：回正後直線倒退'],
+    [3,'06-countersteer','步驟四：反打收進車頭'],
+    [4,'07-straighten','步驟五：回正與微調'],
   ]){
-    // Wait for a visible demonstration phase; no scoring or behavior assertions.
-    await page.locator('#stage').filter({hasText:stage}).waitFor();
-    await capture(name,title);
+    // Pause a real playback phase while recording it, rather than racing a timer.
+    await page.locator('#coach[data-lesson-phase="'+phase+'"]').waitFor();
+    await page.locator('#demo-pause').click();
+    await page.locator('#toast.show').waitFor({state:'hidden'});
+    await capture(name,title+'・駕駛座');
+    await page.keyboard.press('c');await page.keyboard.press('c');
+    await capture(name+'-top',title+'・比例俯視');
+    await page.keyboard.press('c');await page.keyboard.press('c');
+    if(phase===0||phase===2){
+      const reference=await page.locator('#observe-lesson').boundingBox();
+      await page.mouse.move(reference.x+reference.width/2,reference.y+reference.height/2);
+      await page.mouse.down();
+      await page.waitForTimeout(600);
+      await capture(phase===0?'03-quarter-window':'05-tail-reference',phase===0?'按住觀察後側三角窗':'按住觀察實體右鏡框與前車尾燈');
+      await page.mouse.up();
+      await page.waitForTimeout(600);
+    }
+    await page.locator('#demo-pause').click();
   }
-  await page.locator('#demo').filter({hasText:'再看一次示範'}).waitFor();
-  await capture('07-parked','入位示範結束');
+  await page.locator('body[data-demo-state="complete"]').waitFor({state:'attached'});
+  await page.locator('#toast.show').waitFor({state:'hidden'});
+  await capture('08-parked','入位示範結束');
   await page.locator('.mirror-right').click();
-  await capture('08-mirror','放大右後視鏡');
+  await capture('09-mirror','放大右後視鏡');
   await page.keyboard.press('Escape');
   await page.locator('#reset').click();
   await page.locator('#finish').click();
   await page.locator('#result[open]').waitFor();
-  await capture('09-result','評分畫面（重新開始後直接提交，尚未入位）');
+  await capture('10-result','評分畫面（重新開始後直接提交，尚未入位）');
   await page.locator('#again').click();
   await page.locator('#hud-toggle').click();
   await page.setViewportSize({width:390,height:844});
-  await capture('10-mobile','手機第一人稱');
+  await page.locator('#toast.show').waitFor({state:'hidden'});
+  await capture('11-mobile','手機第一人稱');
+
 }finally{
   await browser.close();
 }

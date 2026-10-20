@@ -218,3 +218,28 @@ body.startup-failed>:not(#startup-error){display:none!important}
  .first-person.show-aids{--mirror-line:35vh}
  .first-person.show-aids .steer-adjust{bottom:66px}
 }
+
+/* Expanded teaching stays optional; driving remains quiet by default. */
+.first-person.show-aids .coach{display:block;top:62px;left:16px;width:min(320px,calc(50vw - 32px));max-height:30vh;overflow:auto;z-index:4}
+.first-person.show-aids .coach p{display:block;font-size:13px;line-height:1.7;margin-top:8px;color:#c3d4df}
+.first-person.show-aids .coach .steps{display:flex}
+.first-person.show-aids .coach details{display:block;color:#b7cbd7}
+.first-person .coach a{color:#a8ddd5}
+.lesson-controls{display:flex;gap:6px;margin-top:6px}
+.lesson-controls button{flex:1;min-height:38px;border:1px solid #8bada64d;border-radius:6px;background:#243c48;color:#d3e8e9;padding:6px;font-size:12px;touch-action:none}
+.lesson-controls button[aria-pressed=true]{background:#427b75}
+.lesson-controls [hidden]{display:none}
+.mirror.observing{outline:3px solid #9eddd2;outline-offset:3px}
+@media(max-width:650px){
+ .first-person.show-aids .coach{top:124px;left:10px;width:calc(100% - 20px);max-height:calc(40vh - 155px);padding:9px 11px}
+ .first-person.show-aids .coach .demo-button{position:static;display:block;width:100%;margin-top:7px;font-size:11px;min-height:34px}
+ .first-person.show-aids .coach p{font-size:12px}.first-person.show-aids .coach-head #stage{margin-right:0}
+ .first-person.show-aids .look-controls{top:calc(40vh + 60px)}
+}
+@media(min-width:651px) and (max-height:500px){
+ .first-person.show-aids .coach{top:120px;left:33vw;width:34vw;max-height:calc(100vh - 272px);padding:8px 10px}
+ .first-person.show-aids .coach p{font-size:12px}
+}
+
+.reverse{backdrop-filter:none}
+.first-person.exam.show-aids .coach{display:none}

@@ -36,7 +36,7 @@ function engine(canvas){
 export class Renderer{
   constructor(canvas){
     this.canvas=canvas;this.main=canvas.id==='world';this.view='driver';this.lookYaw=0;this.lookPitch=0;this.fov=80;this.mirrorTilt=-14;
-    if(this.main)shared=engine(canvas);else{this.target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:true,samples:2});shared.panes.push(this);}
+    if(this.main)shared=engine(canvas);else{this.target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:true,samples:2});shared.panes.push(this);const side=canvas.id==='mirror-left'?'left':canvas.id==='mirror-right'?'right':null;if(side)shared.cabin.userData.mirrorFaces[side].material.uniforms.image.value=this.target.texture;}
     this.camera=new THREE.PerspectiveCamera(45,1,.06,200);this.resize();window.addEventListener('resize',()=>this.resize());
   }
   resize(){

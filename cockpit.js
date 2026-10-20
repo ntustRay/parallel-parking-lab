@@ -4,7 +4,7 @@ import {STEERING_LOCK} from './steering.js';
 
 // Metres in the same car-local coordinate system as the exterior shell.
 // Seat/eye/rack positions are ergonomic approximations, not an Altis interior scan.
-export const CABIN=Object.freeze({eyeX:-.4,eyeHeight:1.16,eyeForward:-.16,pitch:-10*Math.PI/180,wheelX:-.4,wheelY:.89,wheelZ:-.30,wheelRadius:.188,mirrorHeight:.98,mirrorForward:.64});
+export const CABIN=Object.freeze({eyeX:-.4,eyeHeight:1.16,eyeForward:-.16,pitch:-10*Math.PI/180,wheelX:-.4,wheelY:.89,wheelZ:-.30,wheelRadius:.188,mirrorHeight:.98,mirrorForward:.47});
 const unitBox=new THREE.BoxGeometry(1,1,1);
 const mats=new Map();
 let grain;
@@ -19,6 +19,14 @@ function display(parent,x,y,z,w,h,width,height){const canvas=document.createElem
 export function createCockpit(){
   const group=new THREE.Group();group.name='driver-cabin';
   const half=CAR.width/2-.115,roof=CAR.height-.08;
+  const mirrorFaces={};
+  for(const sign of [-1,1]){
+    const x=sign*.984;
+    softBox(group,'#326576',x,.98,-.64,.205,.135,.275,.04);
+    box(group,'#1b2228',x,.98,-.498,.19,.115,.005);
+    const face=new THREE.Mesh(new THREE.PlaneGeometry(.177,.102),new THREE.ShaderMaterial({uniforms:{image:{value:null}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',fragmentShader:'uniform sampler2D image;varying vec2 vUv;void main(){gl_FragColor=texture2D(image,vec2(1.-vUv.x,vUv.y));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}'}));
+    face.position.set(x,.98,-.492);group.add(face);mirrorFaces[sign<0?'left':'right']=face;
+  }
   // A shaped dashboard joins the windscreen sill to the lower instrument panel.
   surface(group,[[-half,.94,-1.02],[half,.94,-1.02],[half,.93,-.83],[-half,.93,-.83]],'#363a3d');
   for(const [left,right] of [[-half,-.70],[-.08,half]]){
@@ -34,6 +42,7 @@ export function createCockpit(){
   for(const sign of [-1,1]){
     beam(group,[sign*half,.87,-.92],[sign*(half-.1),roof,-.42],.115,.105,'#555e65');
     beam(group,[sign*(half+.026),.865,-.94],[sign*(half-.07),roof,-.43],.035,.125,'#171f24');
+    beam(group,[sign*.78,.91,.72],[sign*.635,CAR.height-.065,.36],.045,.055,'#555e65');
     box(group,'#2b3135',sign*(half+.018),.65,.02,.09,.43,1.57);
     box(group,'#41464a',sign*(half-.015),.886,.02,.095,.055,1.58);
     box(group,'#171d22',sign*(half-.055),.71,-.28,.03,.12,.32);
@@ -76,7 +85,7 @@ export function createCockpit(){
   box(group,'#172127',-.62,.85,-.36,.15,.021,.025);
   box(group,'#172127',-.18,.85,-.36,.15,.021,.025);
   box(rotating,'#b9c5ca',0,.17,.012,.008,.022,.014);
-  group.userData={wheel,rotating,instruments,lastKey:''};
+  group.userData={wheel,rotating,instruments,mirrorFaces,lastKey:''};
   return group;
 }
 
