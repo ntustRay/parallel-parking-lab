@@ -37,7 +37,7 @@ export class Renderer{
   constructor(canvas){
     this.canvas=canvas;this.main=canvas.id==='world';this.view='driver';this.lookYaw=0;this.lookPitch=0;this.fov=80;this.mirrorTilt=-14;
     if(this.main)shared=engine(canvas);else{this.target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:true,samples:2});shared.panes.push(this);const side=canvas.id==='mirror-left'?'left':canvas.id==='mirror-right'?'right':null;if(side)shared.cabin.userData.mirrorFaces[side].material.uniforms.image.value=this.target.texture;}
-    this.camera=new THREE.PerspectiveCamera(45,1,.06,200);this.resize();window.addEventListener('resize',()=>this.resize());
+    this.perspectiveCamera=new THREE.PerspectiveCamera(45,1,.06,200);this.topCamera=new THREE.OrthographicCamera(-16,16,12,-12,.06,200);this.camera=this.perspectiveCamera;this.resize();window.addEventListener('resize',()=>this.resize());
   }
   resize(){
     this.w=this.canvas.clientWidth||innerWidth;this.h=this.canvas.clientHeight||innerHeight;this.dpr=shared.pixelRatio;
@@ -54,6 +54,7 @@ export class Renderer{
   }
   pointCamera(car){
     const p=new THREE.Vector3(car.x,0,-car.z),f=new THREE.Vector3(Math.sin(car.angle),0,-Math.cos(car.angle)),r=new THREE.Vector3(Math.cos(car.angle),0,Math.sin(car.angle));
+    this.camera=this.view==='top'?this.topCamera:this.perspectiveCamera;
     let eye,target;this.camera.up.set(0,1,0);const aspect=this.w/this.h;let horizontalFov=65;
     if(this.view==='mirror-left'||this.view==='mirror-right'){
       const sign=this.view==='mirror-left'?-1:1;
@@ -71,6 +72,7 @@ export class Renderer{
     }else{
       eye=new THREE.Vector3(-15*(shared.side||1),19,19);target=new THREE.Vector3(shared.side||1,0,-.5);horizontalFov=70;
     }
+    if(this.view==='top'){const halfHeight=Math.max(12,16/aspect);this.camera.left=-halfHeight*aspect;this.camera.right=halfHeight*aspect;this.camera.top=halfHeight;this.camera.bottom=-halfHeight;}
     this.camera.aspect=aspect;this.camera.fov=Math.min(this.view==='driver'?90:150,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontalFov)/2)/aspect)));
     this.camera.position.copy(eye);this.camera.lookAt(target);this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();

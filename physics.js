@@ -62,8 +62,17 @@ export function scenario(level='normal',side=1){
   const {length,width}=BAYS[level]||BAYS.normal;
   const parkedX=(ROAD.curb-CAR.width/2-.3)*side;
   const obstacleZ=length/2+CAR.length/2+.15;
-  const sideGap=.6;
-  return {length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+  const sideGap=.4;
+  return {length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ+.5,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+}
+export function parkingLandmarks(car,scene){
+  const offset=CAR.length/2-CAR.rear;
+  const rearAxleX=car.x-Math.sin(car.angle)*offset;
+  const rearAxleZ=car.z-Math.cos(car.angle)*offset;
+  const outerRearWheelX=rearAxleX*scene.side-CAR.track/2*Math.cos(car.angle);
+  const outerLine=ROAD.curb-scene.target.width;
+  const frontRearZ=scene.obstacles[0].z-CAR.length/2;
+  return {rearAlignment:car.z-CAR.length/2*Math.cos(car.angle)-frontRearZ,rearAxleAlignment:rearAxleZ-frontRearZ,outerRearWheelX,outerRearWheelToLine:outerRearWheelX-outerLine,targetAngle:35,sideGap:scene.sideGap};
 }
 export function collision(s,scene){const p=corners(s);return p.some(v=>v.x*scene.side>=ROAD.curb||v.x*scene.side<=ROAD.oppositeCurb||Math.abs(v.z)>24)||scene.obstacles.some(v=>overlap(p,corners(v)));}
 export function metrics(s,scene){const p=corners(s),angle=Math.abs(Math.atan2(Math.sin(s.angle),Math.cos(s.angle)))*180/Math.PI;return {angle,curb:ROAD.curb-Math.max(...p.map(v=>v.x*scene.side)),inside:p.every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2&&Math.abs(v.z)<scene.length/2),stopped:Math.abs(s.speed)<.05};}

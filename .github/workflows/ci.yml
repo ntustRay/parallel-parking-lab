@@ -32,7 +32,7 @@ jobs:
       - name: Capture UI steps (no tests)
         if: steps.capture_browser.outcome == 'success'
         continue-on-error: true
-        timeout-minutes: 3
+        timeout-minutes: 5
         run: npm run screenshots
       - uses: actions/upload-artifact@v4
         if: always()

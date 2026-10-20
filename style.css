@@ -245,3 +245,56 @@ body.startup-failed>:not(#startup-error){display:none!important}
 .first-person.exam.show-aids .coach{display:none}
 
 .lesson-stepwise{display:flex;align-items:center;gap:7px;font-size:12px;margin:10px 0 0;color:inherit}.lesson-stepwise input{width:16px;height:16px;accent-color:#8bcec7}
+
+/* The three mirrors keep one layout in every camera view. The rear camera is opt-in. */
+#rear-toggle{position:absolute;top:82px;left:16px;z-index:5;min-height:36px;padding:0 12px;border-radius:8px;background:#173848ed;color:#e7f2f5;font-size:12px}
+#rear-toggle[aria-pressed=true]{background:#8bcec7;color:#153949}
+#mirror-system{--mirror-line:52vh;--side-mirror-width:min(25vw,380px);--rear-mirror-width:min(28vw,400px)}
+#mirror-system .mirror-left,#mirror-system .mirror-right{top:var(--mirror-line);width:var(--side-mirror-width);max-width:none;transform:translateY(-50%);border-radius:22px}
+#mirror-system .mirror-left{left:12px;right:auto}#mirror-system .mirror-right{right:12px;left:auto}
+#mirror-system .mirror-left canvas,#mirror-system .mirror-right canvas{width:100%;height:auto;aspect-ratio:1.65}
+#mirror-system .mirror-center{top:82px;left:50%;right:auto;width:var(--rear-mirror-width);max-width:none;transform:translateX(-50%);border-radius:18px}
+#mirror-system .mirror-center canvas{width:100%;height:auto;aspect-ratio:3.15}
+#mirror-system .mirror.expanded{top:82px;left:50%;right:auto;width:min(830px,84vw);max-width:none;transform:translateX(-50%)}
+#mirror-system .mirror.expanded canvas{height:min(53vh,470px);aspect-ratio:auto}
+#rear-panel{top:130px;left:16px;right:auto;width:min(25vw,320px);max-width:none;z-index:3}
+#rear-view{height:auto;aspect-ratio:1.65}
+@media(max-width:650px){
+  #rear-toggle{top:65px;left:6px;min-height:32px;padding:0 7px;font-size:10px}
+  #mirror-system{--mirror-line:40vh;--side-mirror-width:30vw;--rear-mirror-width:32vw}
+  #mirror-system .mirror-left{left:4px}#mirror-system .mirror-right{right:4px}
+  #mirror-system .mirror{border-width:4px}#mirror-system .mirror span{font-size:9px;padding:10px 5px 4px}
+  #mirror-system .mirror-center{top:70px}
+  #mirror-system .mirror.expanded{top:58px;width:calc(100% - 24px)}#mirror-system .mirror.expanded canvas{height:240px}
+  #rear-panel{top:119px;left:5px;width:43vw;padding:4px}#rear-panel>div{font-size:10px;padding:3px 4px 5px}#rear-panel span{display:none}
+}
+@media(min-width:651px) and (max-height:500px){
+  #rear-toggle{top:61px;left:7px;min-height:30px;padding:0 8px;font-size:10px}
+  #mirror-system{--mirror-line:35vh;--side-mirror-width:24vw;--rear-mirror-width:25vw}
+  #mirror-system .mirror-center{top:61px}
+  #rear-panel{top:103px;left:7px;width:24vw;padding:4px}#rear-panel>div{font-size:10px;padding:3px 4px 5px}
+}
+
+/* Leave the top-left camera switch accessible above optional teaching. */
+.first-person.show-aids .coach{top:130px;max-height:25vh}
+#lesson-landmark{font-variant-numeric:tabular-nums;color:#a9ddd3}
+.steps i{flex:1}
+@media(max-width:650px){.first-person.show-aids .coach{top:130px;max-height:calc(40vh - 155px)}}
+
+/* Keep overhead observation panels clear of the car and of each mirror. */
+body:not(.first-person) #mirror-system{--mirror-line:198px;--side-mirror-width:min(23vw,340px)}
+body:not(.first-person) .look-controls,body:not(.first-person) .mirror-tip{display:none}
+body:not(.first-person) .coach{top:330px;max-height:calc(100vh - 660px);overflow:auto}
+body:not(.first-person) .telemetry{top:330px}
+body.rear-camera-open.first-person.show-aids .coach{left:auto;right:16px;top:130px;width:min(320px,35vw)}
+@media(max-width:650px){
+ body:not(.first-person) #mirror-system{--mirror-line:33vh;--side-mirror-width:30vw}
+ body:not(.first-person) .coach{top:44vh;max-height:20vh}
+ body.rear-camera-open.first-person.show-aids .coach{right:6px;width:45vw;max-height:22vh}
+}
+
+.first-person.show-aids .coach{max-height:calc(52vh - 260px)}
+.first-person.show-aids .coach h1{font-size:18px;margin:6px 0}
+.first-person.show-aids .coach p{font-size:12px;line-height:1.5;margin:6px 0}
+.first-person.show-aids .coach .lesson-controls{position:sticky;bottom:0;background:#18313e;padding-top:4px}
+@media(max-width:650px){.first-person.show-aids .coach{max-height:calc(40vh - 155px)}}
