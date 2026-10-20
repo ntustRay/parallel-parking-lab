@@ -52,6 +52,7 @@ try{
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
   await page.locator('#hud-toggle').click();
+  await page.locator('#demo-stepwise').check();
   await page.locator('#demo').click();
   for(const [phase,name,title] of [
     [0,'03-align','步驟一：並排與直線倒退'],
@@ -62,7 +63,7 @@ try{
   ]){
     // Pause a real playback phase while recording it, rather than racing a timer.
     await page.locator('#coach[data-lesson-phase="'+phase+'"]').waitFor();
-    await page.locator('#demo-pause').click();
+    await page.locator('body[data-demo-state="paused"]').waitFor({state:'attached'});
     await page.locator('#toast.show').waitFor({state:'hidden'});
     await capture(name,title+'・駕駛座');
     await page.keyboard.press('c');await page.keyboard.press('c');

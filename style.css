@@ -243,3 +243,5 @@ body.startup-failed>:not(#startup-error){display:none!important}
 
 .reverse{backdrop-filter:none}
 .first-person.exam.show-aids .coach{display:none}
+
+.lesson-stepwise{display:flex;align-items:center;gap:7px;font-size:12px;margin:10px 0 0;color:inherit}.lesson-stepwise input{width:16px;height:16px;accent-color:#8bcec7}
