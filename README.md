@@ -25,7 +25,7 @@
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v0.15.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v0.15.1.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
 
 ## v0.15.0 車身比例、完整停車格與介面
 

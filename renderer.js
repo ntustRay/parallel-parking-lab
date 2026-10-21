@@ -1,5 +1,5 @@
 import {THREE,createWorld,updateWorld} from './scene.js';
-import {CAR} from './physics.js';
+import {CAR,corners} from './physics.js';
 import {CABIN,createCockpit,updateCockpit} from './cockpit.js';
 
 let shared;
@@ -66,13 +66,21 @@ export class Renderer{
       eye=p.clone().addScaledVector(r,CABIN.eyeX).addScaledVector(f,CABIN.eyeForward);eye.y=CABIN.eyeHeight;
       const yaw=car.angle+this.lookYaw,pitch=CABIN.pitch+this.lookPitch;target=eye.clone().add(new THREE.Vector3(Math.sin(yaw)*18,Math.tan(pitch)*18,-Math.cos(yaw)*18));horizontalFov=this.fov;
     }else if(this.view==='top'){
-      eye=new THREE.Vector3(.3,31,.001);target=new THREE.Vector3(.3,0,0);this.camera.up.set(0,0,-1);horizontalFov=65;
+      const scene=shared.scenario;
+      const points=scene.parkingBays.flatMap(bay=>corners(bay,{length:bay.length,width:bay.width})).concat(corners(scene.start));
+      const minZ=Math.min(...points.map(v=>v.z)),maxZ=Math.max(...points.map(v=>v.z));
+      const centerX=(Math.min(...points.map(v=>v.x))+Math.max(...points.map(v=>v.x)))/2,centerZ=(minZ+maxZ)/2;
+      const mirrorBottom=Math.max(...[...document.querySelectorAll('.mirror:not(.expanded)')].map(el=>el.getBoundingClientRect().bottom));
+      const upper=mirrorBottom+14,lower=document.querySelector('footer').getBoundingClientRect().top-14;
+      const usable=Math.max(this.h*.25,lower-upper),halfHeight=Math.max((maxZ-minZ+1.2)/2*this.h/usable,9/aspect);
+      const offset=((upper+lower)/2-this.h/2)*2*halfHeight/this.h;
+      this.camera.left=-halfHeight*aspect;this.camera.right=halfHeight*aspect;this.camera.top=halfHeight+offset;this.camera.bottom=-halfHeight+offset;
+      eye=new THREE.Vector3(centerX,31,-centerZ+.001);target=new THREE.Vector3(centerX,0,-centerZ);this.camera.up.set(0,0,-1);horizontalFov=65;
     }else if(this.view==='chase'){
       eye=p.clone().addScaledVector(f,-10);eye.y=6.5;target=p.clone().addScaledVector(f,3);horizontalFov=70;
     }else{
       eye=new THREE.Vector3(-15*(shared.side||1),19,19);target=new THREE.Vector3(shared.side||1,0,-.5);horizontalFov=70;
     }
-    if(this.view==='top'){const halfHeight=Math.max(12,16/aspect);this.camera.left=-halfHeight*aspect;this.camera.right=halfHeight*aspect;this.camera.top=halfHeight;this.camera.bottom=-halfHeight;}
     this.camera.aspect=aspect;this.camera.fov=Math.min(this.view==='driver'?90:150,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontalFov)/2)/aspect)));
     this.camera.position.copy(eye);this.camera.lookAt(target);this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();

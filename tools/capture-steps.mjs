@@ -56,7 +56,11 @@ try{
         const a=regions[i],b=regions[j],w=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x),h=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y);
         if(w>2&&h>2)overlaps.push([a.selector,b.selector,Math.round(w),Math.round(h)]);
       }
-      return {regions,overlaps};
+      const coach=document.querySelector('#coach'),panel=coach.getBoundingClientRect();
+      const controls=[...coach.querySelectorAll('.coach-tools button')].filter(el=>!el.hidden&&getComputedStyle(el).display!=='none').map(el=>{
+        const r=el.getBoundingClientRect();return {id:el.id,bottom:Math.round(r.bottom),panelBottom:Math.round(panel.bottom),clipped:r.bottom>panel.bottom-2};
+      });
+      return {regions,overlaps,coachControls:controls};
     });
     captures.push({file,title,viewport:page.viewportSize(),...state,layout});
     const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),captures};
