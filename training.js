@@ -29,9 +29,10 @@ export function parkingPlan(scene){
     if(front)high=Math.min(high,front[0]);
     if(rear)low=Math.max(low,rear[1]);
   }
-  const margin=.025;
+  const margin=.15;
   if(!Number.isFinite(low)||!Number.isFinite(high)||high-low<margin*2)return null;
-  const startZ=(low+high)/2;
+  // Stay as close to the initial rear alignment as the full swept body allows.
+  const startZ=Math.max(low+margin,Math.min(scene.obstacles[0].z,high-margin-.05));
   return {startZ,rearAlignmentExtra:scene.obstacles[0].z-startZ,turnAngle:35,safeStartMin:low+margin,safeStartMax:high-margin,path};
 }
 function runner(initial){
@@ -70,6 +71,7 @@ export function demonstration(scene){
   const r=runner(scene.start),run=r.run;
   // Include a stopped positioning frame before selecting reverse.
   const frames=[{...scene.start,lessonPhase:0,lessonAction:'position',demoInput:{throttle:false,brake:true,slow:true}}];
+  frames.push({...scene.start,gear:'R',lessonPhase:1,lessonAction:'align',demoInput:{throttle:false,brake:true,slow:true}});
   if(!run(1,'R',0,false,s=>s.z<=scene.obstacles[0].z,6000,'align'))return null;
   if(!run(1,'R',0,true,s=>s.speed===0,6000,'align'))return null;
   if(!run(1,'R',0,false,s=>s.z-plan.startZ<=s.speed*s.speed/12,6000,'clearance'))return null;

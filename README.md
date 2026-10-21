@@ -14,18 +14,26 @@
 
 | 觀察步驟 | 駕駛座 | 俯視比例 |
 | --- | --- | --- |
-| 1. 評估距離、並排定位 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/03-position.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/03-position-top.webp) |
-| 2. 直退、車尾標齊 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-align.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-align-top.webp) |
+| 1. 車尾已對齊、確認周圍 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/03-position.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/03-position-top.webp) |
+| 2. 保留起轉空間 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-align.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-align-top.webp) |
 | 3. 朝路緣轉入、回正直退 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/05-turn-straight.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/05-turn-straight-top.webp) |
 | 4. 反打、平行回正與微調 | [車內](https://ntustray.github.io/parallel-parking-lab/screenshots/06-counter-adjust.webp) | [俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/06-counter-adjust-top.webp) |
 
 [設定](https://ntustray.github.io/parallel-parking-lab/screenshots/01-setup.webp) · [車尾對齊觀察](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-reference.webp) · [前車角與路緣](https://ntustray.github.io/parallel-parking-lab/screenshots/05-tail-reference.webp) · [入位結束](https://ntustray.github.io/parallel-parking-lab/screenshots/08-parked.webp) · [放大鏡面](https://ntustray.github.io/parallel-parking-lab/screenshots/09-mirror.webp) · [評分畫面（尚未入位）](https://ntustray.github.io/parallel-parking-lab/screenshots/10-result.webp) · [手機](https://ntustray.github.io/parallel-parking-lab/screenshots/11-mobile.webp)
 
-圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。34 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
+圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。40 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v0.14.1.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v0.15.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v0.15.0 車身比例、完整停車格與介面
+
+- 保留 4.40 m 緊湊房車的公尺比例，車頭尾收角、前後玻璃有斜度；碰撞輪廓同步貼合保險桿。
+- 前後車各自在自己的車格置中，三格都有完整標線。標準格中，前後車保險桿各離目標格邊 1.20 m。
+- 起點車尾精確對齊前車、車側相距 50 cm。教學依實際完整車身掃掠保留起轉空間，左右側使用同一模型。
+- 第一人稱與觀察視角採各自版面：鏡頭有獨立位置，教練播放控制固定顯示，觀察模式底部操作列高度 168 px。
+- [起點俯視](https://ntustray.github.io/parallel-parking-lab/screenshots/18-start-alignment-top.webp) · [車身造型](https://ntustray.github.io/parallel-parking-lab/screenshots/19-start-sedan-orbit.webp) · [全開面板](https://ntustray.github.io/parallel-parking-lab/screenshots/20-start-driver-panels.webp) · [手機全開](https://ntustray.github.io/parallel-parking-lab/screenshots/21-mobile-all-panels.webp)
 
 ## v0.14.1 發版流程修正
 

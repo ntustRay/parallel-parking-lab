@@ -13,7 +13,17 @@ export function frontWheelAngles(steer){
   return {left:Math.atan(CAR.wheelbase/(radius+CAR.track/2)),right:Math.atan(CAR.wheelbase/(radius-CAR.track/2))};
 }
 export const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-export function corners(s,car=CAR){const f={x:Math.sin(s.angle),z:Math.cos(s.angle)},r={x:Math.cos(s.angle),z:-Math.sin(s.angle)};return [[-1,-1],[-1,1],[1,1],[1,-1]].map(([a,b])=>({x:s.x+a*car.width/2*r.x+b*car.length/2*f.x,z:s.z+a*car.width/2*r.z+b*car.length/2*f.z}));}
+// The visible bumpers and the collision envelope share the same tapered plan.
+// z is forward in simulation coordinates; the renderer reverses this axis.
+export function bodyHalfWidth(z,car=CAR){
+  const half=car.length/2,w=car.width/2;
+  return w-Math.max(0,(z-(half-.42))/.42)*.16-Math.max(0,(-z-(half-.34))/.34)*.14;
+}
+export function corners(s,car=CAR){
+  const f={x:Math.sin(s.angle),z:Math.cos(s.angle)},r={x:Math.cos(s.angle),z:-Math.sin(s.angle)},half=car.length/2;
+  const outline=[[-1,-half],[-1,-half+.34],[-1,half-.42],[-1,half],[1,half],[1,half-.42],[1,-half+.34],[1,-half]];
+  return outline.map(([side,z])=>{const x=side*bodyHalfWidth(z,car);return {x:s.x+x*r.x+z*f.x,z:s.z+x*r.z+z*f.z};});
+}
 export function overlap(a,b){for(const p of [a,b])for(let i=0;i<p.length;i++){const j=(i+1)%p.length,axis={x:-(p[j].z-p[i].z),z:p[j].x-p[i].x};const project=q=>q.map(v=>v.x*axis.x+v.z*axis.z),aa=project(a),bb=project(b);if(Math.max(...aa)<Math.min(...bb)||Math.max(...bb)<Math.min(...aa))return false;}return true;}
 export function step(s,input,dt){
   dt=clamp(dt,0,1/30);
@@ -60,16 +70,17 @@ export function step(s,input,dt){
 export function scenario(level='normal',side=1,kind='parallel'){
   if(kind==='garage')return garageScenario(level,side);
   const {length,width}=BAYS[level]||BAYS.normal;
-  const parkedX=(ROAD.curb-CAR.width/2-.3)*side;
-  const obstacleZ=length/2+CAR.length/2+.15;
-  const sideGap=.4;
-  return {kind:'parallel',length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length,angle:0},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ+.5,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+  const parkedX=(ROAD.curb-width/2)*side,obstacleZ=length+.15,sideGap=.5;
+  const target={x:parkedX,z:0,width,length,angle:0};
+  const parkingBays=[obstacleZ,0,-obstacleZ].map((z,i)=>({...target,z,active:i===1,number:String(i+1).padStart(2,'0')}));
+  return {kind:'parallel',length,side,sideGap,curb:ROAD.curb*side,target,parkingBays,obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
 }
 function garageScenario(level,side){
   const {length,width}=({easy:{length:5.8,width:3},normal:{length:5.6,width:2.8},hard:{length:5.2,width:2.6}})[level]||{length:5.6,width:2.8};
   const angle=-side*Math.PI/2,target={x:(2.4+length/2)*side,z:0,width,length,angle};
   return {kind:'garage',length,side,sideGap:2.4-.1-CAR.width/2,curb:(2.8+length)*side,
     bounds:{minX:-6.7,maxX:2.8+length,maxZ:16},target,
+    parkingBays:[width+.35,0,-width-.35].map((z,i)=>({...target,z,active:i===1,number:String(i+1).padStart(2,'0')})),
     obstacles:[{x:target.x,z:width+.35,angle},{x:target.x,z:-width-.35,angle}],
     start:{x:.1*side,z:7,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
 }
@@ -94,7 +105,7 @@ export function proximity(s,scene){
   let distance=Math.min(...p.flatMap(v=>[v.x*scene.side-bounds.minX,bounds.maxX-v.x*scene.side,bounds.maxZ-Math.abs(v.z)]));
   for(const obstacle of scene.obstacles){
     const q=corners(obstacle);if(overlap(p,q))return 0;
-    for(const [vertices,edges] of [[p,q],[q,p]])for(const point of vertices)for(let i=0;i<4;i++)distance=Math.min(distance,pointSegment(point,edges[i],edges[(i+1)%4]));
+    for(const [vertices,edges] of [[p,q],[q,p]])for(const point of vertices)for(let i=0;i<edges.length;i++)distance=Math.min(distance,pointSegment(point,edges[i],edges[(i+1)%edges.length]));
   }
   return Math.max(0,distance);
 }

@@ -44,7 +44,21 @@ try{
       demoState:document.body.dataset.demoState??null,
       reverseCamera:document.querySelector('#rear-toggle')?.getAttribute('aria-pressed')??null,
     }));
-    captures.push({file,title,viewport:page.viewportSize(),...state});
+    const layout=await page.evaluate(()=>{
+      const selectors=['#coach','.mirror-left','.mirror-center','.mirror-right','#rear-panel','.steer-adjust','.gears','.actions','.camera','.utility-controls','#hud-toggle','#settings'];
+      const regions=selectors.flatMap(selector=>{
+        const el=document.querySelector(selector),css=el&&getComputedStyle(el),r=el?.getBoundingClientRect();
+        if(!el||el.closest('[hidden]')||css.display==='none'||css.visibility==='hidden'||!r.width||!r.height)return [];
+        return [{selector,x:r.x,y:r.y,width:r.width,height:r.height}];
+      });
+      const overlaps=[];
+      for(let i=0;i<regions.length;i++)for(let j=i+1;j<regions.length;j++){
+        const a=regions[i],b=regions[j],w=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x),h=Math.min(a.y+a.height,b.y+b.height)-Math.max(a.y,b.y);
+        if(w>2&&h>2)overlaps.push([a.selector,b.selector,Math.round(w),Math.round(h)]);
+      }
+      return {regions,overlaps};
+    });
+    captures.push({file,title,viewport:page.viewportSize(),...state,layout});
     const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),captures};
     await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
     await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停 · 步驟截圖</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}figcaption{margin-bottom:10px}</style><h1>慢慢停 · v${version} 步驟截圖</h1><p><a href="../">開始練習</a> · <a href="manifest.json">截圖紀錄</a></p><p>建置：${manifest.commit||'本機'} · ${manifest.capturedAt}</p>${captures.map(item=>`<figure><figcaption>${item.title}（${item.viewport.width} × ${item.viewport.height}）</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);
@@ -58,11 +72,19 @@ try{
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
   await page.locator('#hud-toggle').click();
+  await page.locator('[data-view="top"]').click();
+  await capture('18-start-alignment-top','起點・車尾對齊與三個完整停車格');
+  await page.locator('[data-view="orbit"]').click();
+  await capture('19-start-sedan-orbit','起點・房車造型與相鄰車格間距');
+  await page.locator('[data-view="driver"]').click();
+  await page.locator('#rear-toggle').click();
+  await capture('20-start-driver-panels','起點・教學、三面鏡與倒車顯影同時開啟');
+  await page.locator('#rear-toggle').click();
   await page.locator('#demo-stepwise').check();
   await page.locator('#demo').click();
   for(const [phase,name,title] of [
-    [0,'03-position','步驟一：並排定位'],
-    [1,'04-rear-align','步驟二：直退至車尾對齊'],
+    [0,'03-position','步驟一：車尾已對齊，確認周圍'],
+    [1,'04-rear-align','步驟二：從對齊處留出起轉空間'],
     [2,'05-turn-straight','步驟三：朝路緣轉入，回正直退'],
     [3,'06-counter-adjust','步驟四：反打、平行回正與微調'],
   ]){
@@ -146,8 +168,22 @@ try{
   await page.setViewportSize({width:390,height:844});
   await page.locator('#toast.show').waitFor({state:'hidden'});
   await capture('11-mobile','手機第一人稱');
+  await page.locator('#hud-toggle').click();
+  await page.locator('#rear-toggle').click();
+  await capture('21-mobile-all-panels','手機・教學、三面鏡與倒車顯影同時開啟');
+  await page.locator('#rear-toggle').click();
+  await page.locator('#hud-toggle').click();
   await page.setViewportSize({width:844,height:390});
   await capture('17-landscape','手機橫向第一人稱');
+  await page.setViewportSize({width:1280,height:720});
+  await page.locator('#settings').click();
+  await page.locator('#exercise').selectOption('parallel');
+  await page.locator('#start').click();
+  await page.locator('#hud-toggle').click();
+  await page.locator('#rear-toggle').click();
+  await capture('22-laptop-driver-panels','筆電・教學、三面鏡與倒車顯影');
+  await page.locator('[data-view="top"]').click();
+  await capture('23-laptop-top-panels','筆電俯視・教學、三面鏡與倒車顯影');
 
 }finally{
   await browser.close();
