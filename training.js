@@ -86,7 +86,7 @@ export function demonstration(scene){
     frames.push(...adjust.frames);
   }
   const final=frames.at(-1);
-  if(frames.some(s=>collision(s,scene))||!result(final,scene,{hits:0,corrections:1},{exam:true}).passed)return null;
+  if(frames.some(s=>collision(s,scene))||!result({...final,gear:'P'},scene,{hits:0,corrections:1},{exam:true}).passed)return null;
   const demoPlan={rearAlignmentExtra:scene.obstacles[0].z-shift,turnAngle:plan.turnAngle,safeStartMin:plan.safeStartMin,safeStartMax:plan.safeStartMax};
   for(const frame of frames)frame.demoPlan=demoPlan;
   frames.push({...final,gear:'P',lessonPhase:3,lessonAction:'parked',demoPlan,demoInput:{throttle:false,brake:true,slow:true,holdSteering:true}});
@@ -114,7 +114,7 @@ function garageDemonstration(scene){
   if(!finish.run(3,'R',0,true,s=>s.speed===0,6000,'adjust'))return null;
   frames.push(...finish.frames);
   const final=frames.at(-1);
-  if(frames.some(s=>collision(s,scene))||!result(final,scene,{hits:0,corrections:0},{exam:true}).passed)return null;
+  if(frames.some(s=>collision(s,scene))||!result({...final,gear:'P'},scene,{hits:0,corrections:0},{exam:true}).passed)return null;
   frames.push({...final,gear:'P',lessonPhase:3,lessonAction:'parked',demoInput:{throttle:false,brake:true,slow:true,holdSteering:true}});
   return frames;
 }

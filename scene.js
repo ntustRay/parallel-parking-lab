@@ -242,6 +242,9 @@ export function updateWorld(state,car,scenario,{guides=true,exam=false,braking=f
       group.position.set(bay.x,0,-bay.z);group.rotation.y=-bay.angle;state.bay.add(group);
       for(const x of [-w,w])box(group,lineMat,x,.016,0,.09,.018,L);
       for(const z of [-L/2,L/2])box(group,lineMat,0,.017,z,bay.width,.02,.09);
+      if(scenario.kind==='garage'){
+        box(group,lineMat,0,.026,-L/2+.65,Math.max(.8,bay.width-.4),.025,.12);
+      }
       if(bay.active){
         const fill=new THREE.Mesh(new THREE.PlaneGeometry(bay.width-.12,L-.12),unlit('#68a092',.16));fill.rotation.x=-Math.PI/2;fill.position.y=.012;group.add(fill);
         const accent=unlit('#9fd4bc');

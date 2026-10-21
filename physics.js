@@ -76,7 +76,7 @@ export function scenario(level='normal',side=1,kind='parallel'){
   return {kind:'parallel',length,side,sideGap,curb:ROAD.curb*side,target,parkingBays,obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
 }
 function garageScenario(level,side){
-  const {length,width}=({easy:{length:5.8,width:3},normal:{length:5.6,width:2.8},hard:{length:5.2,width:2.6}})[level]||{length:5.6,width:2.8};
+  const {length,width}=({easy:{length:5.5,width:2.8},normal:{length:5.5,width:2.5},hard:{length:5.2,width:2.4}})[level]||{length:5.5,width:2.5};
   const angle=-side*Math.PI/2,target={x:(2.4+length/2)*side,z:0,width,length,angle};
   return {kind:'garage',length,side,sideGap:2.4-.1-CAR.width/2,curb:(2.8+length)*side,
     bounds:{minX:-6.7,maxX:2.8+length,maxZ:16},target,
@@ -118,12 +118,12 @@ return {turn:Number(keys.has('arrowright')||keys.has('d'))-Number(keys.has('arro
 export function result(s,scene,stats,{exam=false}={}){
 const m=metrics(s,scene),margin=exam?0:.12,angleLimit=exam?8:12;
 const inside=insideBay(s,scene,margin);
-const passed=inside&&m.angle<angleLimit&&m.stopped;
+const parked=s.gear==='P',passed=inside&&m.angle<angleLimit&&m.stopped&&parked;
 const local=targetPosition(s,scene),position=55*clamp(1-Math.hypot(local.x/2.5,local.z/(scene.length/2)),0,1);
 const desiredClearance=scene.kind==='garage'?scene.bounds.maxX-Math.abs(scene.target.x)-CAR.length/2:ROAD.curb-Math.abs(scene.target.x)-CAR.width/2;
 const alignment=25*clamp(1-m.angle/60,0,1),curb=20*clamp(1-Math.abs(m.curb-desiredClearance)/1.8,0,1);
 const penalty=exam?stats.hits*20+Math.max(0,stats.corrections-2)*4:Math.min(16,stats.hits*4)+Math.min(6,Math.max(0,stats.corrections-6));
-return {...m,inside,passed,angleLimit,score:Math.max(0,Math.round(position+alignment+curb-penalty)),breakdown:{position:Math.round(position),alignment:Math.round(alignment),curb:Math.round(curb),penalty}};
+return {...m,inside,parked,passed,angleLimit,score:Math.max(0,Math.round(position+alignment+curb-penalty)),breakdown:{position:Math.round(position),alignment:Math.round(alignment),curb:Math.round(curb),penalty}};
 }
 
 
