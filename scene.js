@@ -33,8 +33,8 @@ export function makeCar(color){
   const group=new THREE.Group(),paint=material(color,.32,.38),rubber=material('#1b2228',.98),chrome=material('#aebbc2',.3,.7),glass=material('#294654',.22,.2),trim=material('#24303a',.7);
   const body=mesh(bodyShell(),paint,0,0,0,1,1,1,group);body.name='body-envelope';
   box(group,trim,0,.18,0,CAR.width-.28,.08,CAR.length-.48);
-  mesh(roundedBox(CAR.width-.07,.12,1.36,.045),paint,0,.855,-1.52,1,1,1,group);
-  mesh(roundedBox(CAR.width-.08,.12,.96,.04),paint,0,.87,1.77,1,1,1,group);
+  mesh(roundedBox(CAR.width-.07,.12,1.36,.045),paint,0,.855,-CAR.length/2+.76,1,1,1,group);
+  mesh(roundedBox(CAR.width-.08,.12,.96,.04),paint,0,.87,CAR.length/2-.56,1,1,1,group);
   const base=.78,top=.635,low=.91,high=CAR.height-.065;
   quad(group,[[-base,low,-.99],[base,low,-.99],[top,high,-.47],[-top,high,-.47]],glass);
   quad(group,[[base,low,1.07],[-base,low,1.07],[-top,high,.63],[top,high,.63]],glass);

@@ -1,12 +1,11 @@
 import {advanceSteering} from './steering.js';
-// Metres, seconds, radians. Exterior dimensions: Toyota Taiwan Corolla Altis.
-// Overhangs use Toyota Europe's same-generation Corolla sedan dimension drawing.
-// Eye position, track and steering rack remain simulation approximations.
-export const CAR=Object.freeze({length:4.63,width:1.78,height:1.435,wheelbase:2.7,front:.935,rear:.995,track:1.53,maxSteer:35*Math.PI/180});
+// Metres, seconds, radians. A compact practice sedan, not a measured car model.
+// Body, wheelbase, overhangs, collision and demonstrations share this geometry.
+export const CAR=Object.freeze({length:4.4,width:1.78,height:1.435,wheelbase:2.64,front:.84,rear:.92,track:1.53,maxSteer:35*Math.PI/180});
 export const DRIVE=Object.freeze({creepForward:.65,creepReverse:.5,precisionCreep:.4,creepAcceleration:.28,creepJerk:.45,precisionLimit:.8,forwardLimit:30/3.6,reverseLimit:12/3.6,forwardAcceleration:1.8,reverseAcceleration:1.2,jerk:2.5,brakeDeceleration:6});
-// Two 3.25 m lanes, with a 2.5 m parking strip on each side.
-export const ROAD=Object.freeze({laneWidth:3.25,parkingWidth:2.5,curb:5,oppositeCurb:-6.5,divider:-.75,curbHeight:.15,sidewalkWidth:3.5});
-export const BAYS=Object.freeze({easy:{length:7,width:2.5},normal:{length:6,width:2.5},hard:{length:5.5,width:2.2}});
+// Two 3.25 m lanes, with a 2.6 m practice parking strip on each side.
+export const ROAD=Object.freeze({laneWidth:3.25,parkingWidth:2.6,curb:5,oppositeCurb:-6.7,divider:-.85,curbHeight:.15,sidewalkWidth:3.5});
+export const BAYS=Object.freeze({easy:{length:7,width:2.6},normal:{length:6.5,width:2.6},hard:{length:6,width:2.5}});
 export function frontWheelAngles(steer){
   const center=steer*CAR.maxSteer;
   if(Math.abs(center)<1e-9)return {left:0,right:0};
