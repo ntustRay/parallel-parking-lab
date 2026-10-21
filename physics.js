@@ -88,6 +88,16 @@ export function targetPosition(point,scene){
   return {x:dx*Math.cos(a)-dz*Math.sin(a),z:dx*Math.sin(a)+dz*Math.cos(a)};
 }
 function insideBay(s,scene,margin=0){return corners(s).every(point=>{const p=targetPosition(point,scene);return Math.abs(p.x)<scene.target.width/2+margin&&Math.abs(p.z)<scene.length/2+margin;});}
+function pointSegment(point,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=clamp(((point.x-a.x)*dx+(point.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);return Math.hypot(point.x-a.x-t*dx,point.z-a.z-t*dz);}
+export function proximity(s,scene){
+  const p=corners(s),bounds=scene.bounds||{minX:ROAD.oppositeCurb,maxX:ROAD.curb,maxZ:24};
+  let distance=Math.min(...p.flatMap(v=>[v.x*scene.side-bounds.minX,bounds.maxX-v.x*scene.side,bounds.maxZ-Math.abs(v.z)]));
+  for(const obstacle of scene.obstacles){
+    const q=corners(obstacle);if(overlap(p,q))return 0;
+    for(const [vertices,edges] of [[p,q],[q,p]])for(const point of vertices)for(let i=0;i<4;i++)distance=Math.min(distance,pointSegment(point,edges[i],edges[(i+1)%4]));
+  }
+  return Math.max(0,distance);
+}
 export function metrics(s,scene){const p=corners(s),delta=s.angle-(scene.target.angle||0),angle=Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))*180/Math.PI;return {angle,curb:(scene.bounds?.maxX??ROAD.curb)-Math.max(...p.map(v=>v.x*scene.side)),inside:insideBay(s,scene),stopped:Math.abs(s.speed)<.05};}
 // The selected gear controls direction; pedal keys never change meaning.
 export function drivingInput(keys,gear,{gas=false,brake=false,slow=true}={}){
