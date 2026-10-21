@@ -142,14 +142,46 @@ export function buildStreet(state,side){
   batch.flush();state.side=side;
 }
 
+function buildParkingCourt(state,scenario){
+  state.street.clear();const group=state.street,batch=new Batches(group),side=scenario.side;
+  const edge=scenario.bounds.maxX,min=scenario.bounds.minX;
+  box(group,'#819d85',0,-.18,0,140,.2,140);
+  box(group,state.roadMaterial,(edge+min)/2*side,-.035,0,edge-min,.07,32);
+  // Visible curb edges match the collision envelope exactly.
+  for(const x of [min-.15,edge+.15])batch.add('#d6d6c9',x*side,.09,0,.3,.18,32.6);
+  for(const z of [-16.15,16.15])batch.add('#d6d6c9',(edge+min)/2*side,.09,z,edge-min,.18,.3);
+  for(let z=-14;z<16;z+=4)batch.add('#d8d9c7',-2.6*side,.012,z,.12,.018,1.8);
+  for(const [index,z] of [scenario.target.width+.35,0,-scenario.target.width-.35].entries()){
+    for(const line of [-1,1])batch.add('#eae6cd',scenario.target.x,.016,-z+line*scenario.target.width/2,scenario.length,.018,.1);
+    batch.add('#eae6cd',(2.4+scenario.length)*side,.016,-z,.1,.018,scenario.target.width);
+    const number=new THREE.Mesh(new THREE.PlaneGeometry(1.4,.35),signTexture(String(index+1).padStart(2,'0'),index===1?'#357875':'#434e52','#ecedda'));
+    number.rotation.x=-Math.PI/2;number.position.set((edge-.28)*side,.025,-z);group.add(number);
+  }
+  for(const z of [-11,11]){
+    batch.add('#65716c',(edge+1.8)*side,2.5,z,.12,5,.12,cylinderGeometry);
+    batch.add('#e9e7ce',(edge+1.35)*side,4.9,z,1.2,.08,.4);
+    batch.add('#8b9b85',(edge+1.8)*side,.25,z+2,1.5,.5,2);
+    for(let j=0;j<4;j++)batch.add('#5a805b',(edge+1.8)*side,.8,z+1.3+j*.45,.8,.9,.7,sphereGeometry);
+  }
+  batch.add('#bbc6bd',(edge+3)*side,2.7,0,1,5.4,27);
+  batch.add('#58797c',(edge+2.45)*side,3.7,0,.1,1.2,5);
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(4.6,1),signTexture('PARKING LAB','#345d63','#f1ead3'));
+  sign.position.set((edge+2.38)*side,3.7,0);sign.rotation.y=-side*Math.PI/2;group.add(sign);
+  batch.flush();state.side=side;
+}
+
 export function updateWorld(state,car,scenario,{guides=true,exam=false}={}){
-  if(state.side!==scenario.side)buildStreet(state,scenario.side);
+  if(state.side!==scenario.side||state.kind!==scenario.kind||state.courtLength!==scenario.length){
+    if(scenario.kind==='garage')buildParkingCourt(state,scenario);else buildStreet(state,scenario.side);
+    state.kind=scenario.kind;state.courtLength=scenario.length;
+  }
   if(state.scenario!==scenario){
     for(const v of state.obstacles){state.world.remove(v);v.traverse(item=>{if(item.geometry&&![boxGeometry,sphereGeometry,cylinderGeometry,carBodyGeometry].includes(item.geometry))item.geometry.dispose();});}state.obstacles=scenario.obstacles.map((p,i)=>{const v=makeCar(i?'#9b7d61':'#c3c8c7');v.position.set(p.x,0,-p.z);v.rotation.y=-p.angle;state.world.add(v);return v;});
-    state.bay.clear();const tx=scenario.target.x,L=scenario.length,lineMat=new THREE.MeshBasicMaterial({color:'#ece9d2'});
-    for(const x of [tx-scenario.target.width/2,tx+scenario.target.width/2])box(state.bay,lineMat,x,.016,0,.1,.018,L);
-    for(const z of [-L/2,L/2])box(state.bay,lineMat,tx,.017,-z,scenario.target.width,.02,.1);
-    state.scenario=scenario;
+    state.bay.clear();const L=scenario.length,lineMat=new THREE.MeshBasicMaterial({color:'#ece9d2'});
+    state.bay.position.set(scenario.target.x,0,-scenario.target.z);state.bay.rotation.y=-(scenario.target.angle||0);
+    for(const x of [-scenario.target.width/2,scenario.target.width/2])box(state.bay,lineMat,x,.016,0,.1,.018,L);
+    for(const z of [-L/2,L/2])box(state.bay,lineMat,0,.017,-z,scenario.target.width,.02,.1);
+    state.scenario=scenario;state.guideKey='';
   }
   state.player.position.set(car.x,0,-car.z);state.player.rotation.y=-car.angle;const angles=frontWheelAngles(car.steer);for(const wheel of state.player.userData.frontWheels)wheel.rotation.y=-(wheel.position.x<0?angles.left:angles.right);
   state.bay.visible=true;

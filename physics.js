@@ -57,12 +57,21 @@ export function step(s,input,dt){
   t.x=rx+Math.sin(t.angle)*offset;t.z=rz+Math.cos(t.angle)*offset;
   return t;
 }
-export function scenario(level='normal',side=1){
+export function scenario(level='normal',side=1,kind='parallel'){
+  if(kind==='garage')return garageScenario(level,side);
   const {length,width}=BAYS[level]||BAYS.normal;
   const parkedX=(ROAD.curb-CAR.width/2-.3)*side;
   const obstacleZ=length/2+CAR.length/2+.15;
   const sideGap=.4;
-  return {length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ+.5,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+  return {kind:'parallel',length,side,sideGap,curb:ROAD.curb*side,target:{x:(ROAD.curb-width/2)*side,z:0,width,length,angle:0},obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ+.5,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
+}
+function garageScenario(level,side){
+  const {length,width}=({easy:{length:5.8,width:3},normal:{length:5.6,width:2.8},hard:{length:5.2,width:2.6}})[level]||{length:5.6,width:2.8};
+  const angle=-side*Math.PI/2,target={x:(2.4+length/2)*side,z:0,width,length,angle};
+  return {kind:'garage',length,side,sideGap:2.4-.1-CAR.width/2,curb:(2.8+length)*side,
+    bounds:{minX:-6.7,maxX:2.8+length,maxZ:16},target,
+    obstacles:[{x:target.x,z:width+.35,angle},{x:target.x,z:-width-.35,angle}],
+    start:{x:.1*side,z:7,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
 }
 export function parkingLandmarks(car,scene){
   const offset=CAR.length/2-CAR.rear;
@@ -73,8 +82,13 @@ export function parkingLandmarks(car,scene){
   const frontRearZ=scene.obstacles[0].z-CAR.length/2;
   return {rearAlignment:car.z-CAR.length/2*Math.cos(car.angle)-frontRearZ,rearAxleAlignment:rearAxleZ-frontRearZ,outerRearWheelX,outerRearWheelToLine:outerRearWheelX-outerLine,targetAngle:35,sideGap:scene.sideGap};
 }
-export function collision(s,scene){const p=corners(s);return p.some(v=>v.x*scene.side>=ROAD.curb||v.x*scene.side<=ROAD.oppositeCurb||Math.abs(v.z)>24)||scene.obstacles.some(v=>overlap(p,corners(v)));}
-export function metrics(s,scene){const p=corners(s),angle=Math.abs(Math.atan2(Math.sin(s.angle),Math.cos(s.angle)))*180/Math.PI;return {angle,curb:ROAD.curb-Math.max(...p.map(v=>v.x*scene.side)),inside:p.every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2&&Math.abs(v.z)<scene.length/2),stopped:Math.abs(s.speed)<.05};}
+export function collision(s,scene){const p=corners(s),bounds=scene.bounds||{minX:ROAD.oppositeCurb,maxX:ROAD.curb,maxZ:24};return p.some(v=>v.x*scene.side>=bounds.maxX||v.x*scene.side<=bounds.minX||Math.abs(v.z)>bounds.maxZ)||scene.obstacles.some(v=>overlap(p,corners(v)));}
+export function targetPosition(point,scene){
+  const dx=point.x-scene.target.x,dz=point.z-scene.target.z,a=scene.target.angle||0;
+  return {x:dx*Math.cos(a)-dz*Math.sin(a),z:dx*Math.sin(a)+dz*Math.cos(a)};
+}
+function insideBay(s,scene,margin=0){return corners(s).every(point=>{const p=targetPosition(point,scene);return Math.abs(p.x)<scene.target.width/2+margin&&Math.abs(p.z)<scene.length/2+margin;});}
+export function metrics(s,scene){const p=corners(s),delta=s.angle-(scene.target.angle||0),angle=Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))*180/Math.PI;return {angle,curb:(scene.bounds?.maxX??ROAD.curb)-Math.max(...p.map(v=>v.x*scene.side)),inside:insideBay(s,scene),stopped:Math.abs(s.speed)<.05};}
 // The selected gear controls direction; pedal keys never change meaning.
 export function drivingInput(keys,gear,{gas=false,brake=false,slow=true}={}){
 const down=keys.has('s')||keys.has('arrowdown');
@@ -82,10 +96,11 @@ return {turn:Number(keys.has('arrowright')||keys.has('d'))-Number(keys.has('arro
 }
 export function result(s,scene,stats,{exam=false}={}){
 const m=metrics(s,scene),margin=exam?0:.12,angleLimit=exam?8:12;
-const inside=corners(s).every(v=>Math.abs(v.x-scene.target.x)<scene.target.width/2+margin&&Math.abs(v.z)<scene.length/2+margin);
+const inside=insideBay(s,scene,margin);
 const passed=inside&&m.angle<angleLimit&&m.stopped;
-const position=55*clamp(1-Math.hypot((s.x-scene.target.x)/2.5,s.z/(scene.length/2)),0,1);
-const alignment=25*clamp(1-m.angle/60,0,1),curb=20*clamp(1-Math.abs(m.curb-(ROAD.curb-Math.abs(scene.target.x)-CAR.width/2))/1.8,0,1);
+const local=targetPosition(s,scene),position=55*clamp(1-Math.hypot(local.x/2.5,local.z/(scene.length/2)),0,1);
+const desiredClearance=scene.kind==='garage'?scene.bounds.maxX-Math.abs(scene.target.x)-CAR.length/2:ROAD.curb-Math.abs(scene.target.x)-CAR.width/2;
+const alignment=25*clamp(1-m.angle/60,0,1),curb=20*clamp(1-Math.abs(m.curb-desiredClearance)/1.8,0,1);
 const penalty=exam?stats.hits*20+Math.max(0,stats.corrections-2)*4:Math.min(16,stats.hits*4)+Math.min(6,Math.max(0,stats.corrections-6));
 return {...m,inside,passed,angleLimit,score:Math.max(0,Math.round(position+alignment+curb-penalty)),breakdown:{position:Math.round(position),alignment:Math.round(alignment),curb:Math.round(curb),penalty}};
 }

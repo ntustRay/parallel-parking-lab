@@ -18,6 +18,7 @@ function overlapInterval(body,obstacle){
   return [low,high];
 }
 export function parkingPlan(scene){
+  if(scene.kind==='garage')return garagePlan(scene);
   const path=turningPath(scene);
   if(!path)return null;
   let low=-Infinity,high=Infinity;
@@ -63,6 +64,7 @@ function turningPath(scene){
   return r.frames;
 }
 export function demonstration(scene){
+  if(scene.kind==='garage')return garageDemonstration(scene);
   const plan=parkingPlan(scene);
   if(!plan)return null;
   const r=runner(scene.start),run=r.run;
@@ -86,5 +88,31 @@ export function demonstration(scene){
   const demoPlan={rearAlignmentExtra:scene.obstacles[0].z-shift,turnAngle:plan.turnAngle,safeStartMin:plan.safeStartMin,safeStartMax:plan.safeStartMax};
   for(const frame of frames)frame.demoPlan=demoPlan;
   frames.push({...final,gear:'P',lessonPhase:3,lessonAction:'parked',demoPlan,demoInput:{throttle:false,brake:true,slow:true,holdSteering:true}});
+  return frames;
+}
+
+function garagePlan(scene){
+  const r=runner({...scene.start,z:0});
+  if(!r.run(1,'R',scene.side,true,s=>s.steer===scene.side))return null;
+  if(!r.run(1,'R',scene.side,false,s=>s.angle*scene.side<=-Math.PI/2))return null;
+  if(!r.run(1,'R',scene.side,true,s=>s.speed===0))return null;
+  if(!r.run(2,'R',0,true,s=>s.steer===0))return null;
+  return {startZ:scene.target.z-r.state.z,turnAngle:90,path:r.frames};
+}
+function garageDemonstration(scene){
+  const plan=garagePlan(scene);
+  if(!plan)return null;
+  const r=runner(scene.start),frames=[{...scene.start,lessonPhase:0,lessonAction:'position',demoInput:{throttle:false,brake:true,slow:true}}];
+  if(!r.run(0,'R',0,false,s=>s.z-plan.startZ<=s.speed*s.speed/12,6000,'align'))return null;
+  if(!r.run(0,'R',0,true,s=>s.speed===0,6000,'align'))return null;
+  frames.push(...r.frames);
+  for(const pose of plan.path)frames.push({...pose,z:pose.z+r.state.z,lessonAction:pose.lessonPhase===1?'turn':'straight'});
+  const finish=runner(frames.at(-1));
+  if(!finish.run(2,'R',0,false,s=>(scene.target.x-s.x)*scene.side<=s.speed*s.speed/12+.025,6000,'straight'))return null;
+  if(!finish.run(3,'R',0,true,s=>s.speed===0,6000,'adjust'))return null;
+  frames.push(...finish.frames);
+  const final=frames.at(-1);
+  if(frames.some(s=>collision(s,scene))||!result(final,scene,{hits:0,corrections:0},{exam:true}).passed)return null;
+  frames.push({...final,gear:'P',lessonPhase:3,lessonAction:'parked',demoInput:{throttle:false,brake:true,slow:true,holdSteering:true}});
   return frames;
 }
