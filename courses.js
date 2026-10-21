@@ -80,6 +80,7 @@ export function advanceCourse(previous,next,scene){
 export function coursePhase(car,scene){
   const p=car.courseProgress||0;
   if(scene.kind==='s-curve')return p<2?0:p<4?1:p<6?2:3;
+  if(scene.kind==='uturn-two'&&p===2&&car.gear==='R')return 1;
   return Math.min(3,p);
 }
 export function courseMetrics(car,scene){const m=metrics(car,scene);return isDrivingCourse(scene)?{...m,curb:proximity(car,scene)}:m;}
@@ -89,7 +90,7 @@ export function assess(car,scene,stats,options={}){
   const position=m.inside?35:Math.round(35*clamp(1-Math.hypot(car.x-scene.target.x,car.z-scene.target.z)/15,0,1));
   const route=Math.round(40*Math.min(needed,car.courseProgress||0)/needed),alignment=Math.round(25*clamp(1-m.angle/60,0,1));
   const penalty=stats.hits*(options.exam?20:4)+Math.max(0,stats.corrections-(scene.kind==='uturn-two'?4:2))*2;
-  return {...m,parked,angleLimit,routeComplete,passed:m.inside&&m.stopped&&parked&&m.angle<angleLimit&&routeComplete,score:Math.max(0,position+route+alignment-penalty),breakdown:{position,alignment,curb:route,penalty}};
+  return {...m,parked,angleLimit,routeComplete,passed:m.inside&&m.stopped&&parked&&m.angle<angleLimit&&routeComplete&&(!options.exam||stats.hits===0),score:Math.max(0,position+route+alignment-penalty),breakdown:{position,alignment,curb:route,penalty}};
 }
 function recorder(scene){
   let state={...scene.start},failed=false;const frames=[{...state,lessonPhase:0,demoInput:{brake:true,slow:true}}];

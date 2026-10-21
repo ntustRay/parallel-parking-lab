@@ -42,6 +42,9 @@ try{
     await fs.writeFile(path.join(output,file),Buffer.from(base64,'base64'));
     const state=await page.evaluate(()=>({
       loading:!document.querySelector('#loading')?.hidden,
+      exercise:document.querySelector('#exercise')?.value,
+      gear:document.querySelector('#gear-label')?.textContent,
+      landmark:document.querySelector('#lesson-landmark')?.textContent,
       view:document.querySelector('[data-view].selected')?.dataset.view??null,
       lessonPhase:document.querySelector('#coach')?.dataset.lessonPhase??null,
       demoState:document.body.dataset.demoState??null,
@@ -70,7 +73,7 @@ try{
       return {regions,overlaps,coachControls:controls};
     });
     captures.push({file,title,viewport:page.viewportSize(),...state,layout});
-    const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),controlReview,captures};
+    const manifest={version,complete:false,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),controlReview,captures};
     await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
     await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停 · 步驟截圖</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}figcaption{margin-bottom:10px}</style><h1>慢慢停 · v${version} 步驟截圖</h1><p><a href="../">開始練習</a> · <a href="manifest.json">截圖紀錄</a></p><p>建置：${manifest.commit||'本機'} · ${manifest.capturedAt}</p>${captures.map(item=>`<figure><figcaption>${item.title}（${item.viewport.width} × ${item.viewport.height}）</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);
     console.log('Screenshot:',file,title);
@@ -260,6 +263,9 @@ try{
   await capture('22-laptop-driver-panels','筆電・教學、三面鏡與倒車顯影');
   await page.locator('[data-view="top"]').click();
   await capture('23-laptop-top-panels','筆電俯視・教學、三面鏡與倒車顯影');
+  const complete=JSON.parse(await fs.readFile(path.join(output,'manifest.json'),'utf8'));
+  complete.complete=true;await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(complete,null,2)+'\n');
+  console.log('Capture complete:',captures.length,'images');
 
 }finally{
   await browser.close();

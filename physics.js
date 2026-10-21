@@ -136,7 +136,7 @@ return {turn:Number(keys.has('arrowright')||keys.has('d'))-Number(keys.has('arro
 export function result(s,scene,stats,{exam=false}={}){
 const m=metrics(s,scene),margin=exam?0:.12,angleLimit=exam?8:12;
 const inside=insideBay(s,scene,margin);
-const parked=s.gear==='P',passed=inside&&m.angle<angleLimit&&m.stopped&&parked;
+const parked=s.gear==='P',passed=inside&&m.angle<angleLimit&&m.stopped&&parked&&(!exam||stats.hits===0);
 const local=targetPosition(s,scene),position=55*clamp(1-Math.hypot(local.x/2.5,local.z/(scene.length/2)),0,1);
 const desiredClearance=scene.kind==='garage'?scene.bounds.maxX-Math.abs(scene.target.x)-CAR.length/2:ROAD.curb-Math.abs(scene.target.x)-CAR.width/2;
 const alignment=25*clamp(1-m.angle/60,0,1),curb=20*clamp(1-Math.abs(m.curb-desiredClearance)/1.8,0,1);

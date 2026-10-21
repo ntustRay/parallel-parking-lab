@@ -1,8 +1,8 @@
-# 慢慢停 · 第一人稱停車練習
+# 慢慢停 · 停車與低速駕駛練習
 
-**坐進駕駛座，用後視鏡與車內視線練習路邊停車。**
+**坐進駕駛座，用三面後視鏡把停車、S 彎往返與迴轉練熟。**
 
-預設就是第一人稱。看左右後視鏡確認車身與路緣的相對位置，轉頭觀察，控制方向盤、油門與煞車，把車慢慢倒進去。繁體中文、免帳號、無時間限制。
+預設第一人稱，另有斜俯視、正上方及跟車觀察。所有關卡共用 4.40 × 1.78 m 房車、三面後視鏡、油門煞車、P／R／D 排檔、音效音樂與快捷鍵。繁體中文、免帳號、無時間限制。
 
 **[開始練習](https://ntustray.github.io/parallel-parking-lab/)** · [部署狀態](https://github.com/ntustRay/parallel-parking-lab/actions)
 
@@ -21,11 +21,30 @@
 
 [設定](https://ntustray.github.io/parallel-parking-lab/screenshots/01-setup.webp) · [車尾對齊觀察](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-reference.webp) · [前車角與路緣](https://ntustray.github.io/parallel-parking-lab/screenshots/05-tail-reference.webp) · [入位結束](https://ntustray.github.io/parallel-parking-lab/screenshots/08-parked.webp) · [放大鏡面](https://ntustray.github.io/parallel-parking-lab/screenshots/09-mirror.webp) · [評分畫面（尚未入位）](https://ntustray.github.io/parallel-parking-lab/screenshots/10-result.webp) · [手機](https://ntustray.github.io/parallel-parking-lab/screenshots/11-mobile.webp)
 
-圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。45 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
+圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v1.0.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v2.0.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v2.0.0 完整課程
+
+| 課程 | 完成條件 |
+| --- | --- |
+| 路邊停車 | 車尾對齊起步，倒進目標格，對齊停穩排 P |
+| 倒車入庫 | 定位、倒退轉入 90° 車格、回正直退，完全入格排 P |
+| S 彎前進／倒退 | D 前進通過兩彎，末端停穩換 R，沿原路倒回 START，排 P |
+| 雙線道迴轉 | 6.5 m 訓練道路，前進、倒退騰空間、再前進轉到反向車道，停入 FINISH |
+| 四線道迴轉 | 13 m 訓練道路，低速大迴轉後沿反向車道停入 FINISH |
+
+- 每課有左右鏡像、四階段提示與相同物理模型產生的完整示範。示範可逐步暫停、按住觀察、以 0.5／1／2／4 倍播放，示範不計入成績。
+- S 彎以完整八點車身及非凸道路判斷路緣、記錄七個順序進度點，未走完不能在起點直接提交成功。雙線道必須實際倒退騰出空間。
+- 完成需完整入框、角度合格、停穩排 P；測驗另需零碰撞。設定頁分別記錄五課完成狀態與最佳成績，成功後可進入下一課。
+- HTML 首屏顯示 loading，等第一個 3D 場景畫出才進入設定；下載或圖形初始化失敗提供原因與重試。
+- 方向鍵約 0.5 秒打滿、放開約 0.3 秒回正；Z／V 固定打滿，X 回正。音效音樂與所有常用按鈕快捷鍵沿用。
+- 迴轉課程為封閉訓練場，尺寸及操作為低速近似模型，並非道路合法性或駕訓考照規格認證。
+
+[載入畫面](https://ntustray.github.io/parallel-parking-lab/screenshots/00-loading.webp) · [S 彎](https://ntustray.github.io/parallel-parking-lab/screenshots/28-s-curve-1-top.webp) · [雙線道](https://ntustray.github.io/parallel-parking-lab/screenshots/29-uturn-two-2-top.webp) · [四線道](https://ntustray.github.io/parallel-parking-lab/screenshots/29-uturn-four-1-top.webp)
 
 ## v1.0.0 路邊停車完整版本
 
@@ -33,7 +52,7 @@
 - 方向鍵及打滿按鈕約 0.5 秒從置中打滿，左右全行程約 1 秒；方向鍵或滑鼠放開後，從打滿約 0.3 秒快速回正。
 - 移除舊版保持轉角選項與偏好的回讀，避免停用本版放鍵快速回正；Z／V 打滿按鈕可固定角度，X 可快速回正。
 - 車位長寬參考[監理服務網小型車停車格劃設範圍](https://www.mvdis.gov.tw/webMvdisLaw/Download.aspx?ID=1474&type=Law)，此處採 6 × 2.5 m 為標準練習格。
-- 接下來依序發展倒車入庫、S 彎前進／倒退、雙線道與四線道路邊迴轉；項目完成後整合為 v2.0。
+- 後續倒車入庫、S 彎與迴轉已分別在 v1.1、v1.2、v1.3 完成，整合為 v2.0。
 
 ## v0.15.0 車身比例、完整停車格與介面
 

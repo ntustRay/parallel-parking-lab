@@ -38,7 +38,9 @@ try{
   await import(URL.createObjectURL(new Blob([start],{type:'text/javascript'})));
 }catch(error){
   console.error(error);
-  if(!document.querySelector('#startup-error')){
+  if(window.parkingBoot){window.parkingBoot.fail('離線場景無法開啟，請重新下載完整 HTML 後再試。');}
+  else if(!document.querySelector('#startup-error')){
+    document.querySelector('#loading').hidden=true;
     document.body.classList.add('startup-failed');
     const notice=document.createElement('main');notice.id='startup-error';
     const heading=document.createElement('h1');heading.textContent='無法開啟離線試玩';

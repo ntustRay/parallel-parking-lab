@@ -6,13 +6,13 @@ window.parkingBoot={
   ready(){
     if(ready||failed)return;ready=true;clearTimeout(timeout);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{
-      loader.hidden=true;document.body.classList.add('app-ready');
+      loader.hidden=true;loader.setAttribute('aria-busy','false');document.body.classList.add('app-ready');
       window.dispatchEvent(new Event('parking:ready'));
     }));
   },
   fail(text='場景載入失敗，請確認網路連線後重新載入。'){
     if(failed)return;failed=true;ready=false;clearTimeout(timeout);
-    loader.hidden=false;loader.classList.add('loading-failed');loader.setAttribute('role','alert');
+    loader.hidden=false;loader.setAttribute('aria-busy','false');loader.classList.add('loading-failed');loader.setAttribute('role','alert');
     title.textContent='暫時無法開啟練習場';message.textContent=text;
     document.getElementById('loading-retry').hidden=false;
   }

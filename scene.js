@@ -237,9 +237,10 @@ function buildDrivingCourse(state,scene){
   function strip(a,b,color,w=.14,height=.02){
     batch.add(color,(a.x+b.x)/2,height/2+.015,-(a.z+b.z)/2,Math.hypot(b.x-a.x,b.z-a.z)+.015,height,w,boxGeometry,Math.atan2(b.z-a.z,b.x-a.x));
   }
+  const winding=Math.sign(area.reduce((sum,p,i)=>sum+p.x*area[(i+1)%area.length].z-area[(i+1)%area.length].x*p.z,0));
   for(let i=0;i<area.length;i++){
-    const a=area[i],b=area[(i+1)%area.length];
-    strip(a,b,i%12<6?'#deddd0':'#b1b4a5',.18,.15);
+    const a=area[i],b=area[(i+1)%area.length],length=Math.hypot(b.x-a.x,b.z-a.z),nx=winding*(b.z-a.z)/length*.09,nz=-winding*(b.x-a.x)/length*.09;
+    strip({x:a.x+nx,z:a.z+nz},{x:b.x+nx,z:b.z+nz},i%12<6?'#deddd0':'#b1b4a5',.18,.15);
   }
   const start=scene.start;
   strip({x:start.x-scene.width/2+.2,z:start.z+2.8},{x:start.x+scene.width/2-.2,z:start.z+2.8},'#9bd4c5',.16);
@@ -301,7 +302,7 @@ export function updateWorld(state,car,scenario,{guides=true,exam=false,braking=f
       const label=new THREE.Mesh(new THREE.PlaneGeometry(bay.number.length>2?1.5:.65,.325),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
       label.rotation.x=-Math.PI/2;label.position.set(0,.025,L/2-.37);group.add(label);
     }
-    state.scenario=scenario;state.guideKey='';
+    state.scenario=scenario;state.guideKey='';state.shadowKey='';
   }
   state.player.position.set(car.x,0,-car.z);state.player.rotation.y=-car.angle;const angles=frontWheelAngles(car.steer);for(const wheel of state.player.userData.frontWheels)wheel.rotation.y=-(wheel.position.x<0?angles.left:angles.right);
   for(const lamp of state.player.userData.lights)lamp.material.emissiveIntensity=braking?2.3:.35;
