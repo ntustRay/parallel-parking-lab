@@ -1,3 +1,4 @@
+import {isDrivingCourse,coursePhase,drivingLesson} from './courses.js';
 import {CAR,metrics,parkingLandmarks} from './physics.js';
 
 const parallel=[
@@ -14,6 +15,7 @@ const garage=[
 ];
 
 export function lessonProgress(car,scene,phase,demonstrated){
+  if(isDrivingCourse(scene))return coursePhase(car,scene);
   if(demonstrated)return Math.min(3,car.lessonPhase??3);
   if(scene.kind==='garage'){
     const m=metrics(car,scene);
@@ -30,6 +32,7 @@ export function lessonProgress(car,scene,phase,demonstrated){
 }
 
 export function lessonContent(car,scene,phase,plan){
+  if(isDrivingCourse(scene))return drivingLesson(car,scene);
   const [title,original]=(scene.kind==='garage'?garage:parallel)[phase];
   let text=original,landmark;
   if(scene.kind==='garage'){
@@ -46,4 +49,4 @@ export function lessonContent(car,scene,phase,plan){
     clearanceLabel:scene.kind==='garage'?'後方餘裕':'路緣距離',angleLabel:scene.kind==='garage'?'與格線夾角':'車身角度'};
 }
 
-export function observationYaw(scene,phase){return (scene.kind==='garage'?[100,120,90,45]:[75,130,-75,25])[phase]*scene.side;}
+export function observationYaw(scene,phase){return (isDrivingCourse(scene)?[0,65,-65,0]:scene.kind==='garage'?[100,120,90,45]:[75,130,-75,25])[phase]*scene.side;}

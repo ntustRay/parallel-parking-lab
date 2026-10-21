@@ -117,6 +117,7 @@ try{
   await page.locator('#rear-toggle').click();
   await capture('20-start-driver-panels','起點・教學、三面鏡與倒車顯影同時開啟');
   await page.locator('#rear-toggle').click();
+  await page.locator('#demo-speed').selectOption('4');
   await page.locator('#demo-stepwise').check();
   await page.locator('#demo').click();
   for(const [phase,name,title] of [
@@ -180,6 +181,7 @@ try{
   await page.locator('#difficulty').selectOption('normal');
   await page.locator('#start').click();
   if(await page.locator('#hud-toggle').getAttribute('aria-pressed')!=='true')await page.locator('#hud-toggle').click();
+  await page.locator('#demo-speed').selectOption('4');
   await page.locator('#demo-stepwise').check();
   await page.locator('#demo').click();
   for(const phase of [0,1,2,3]){
@@ -193,6 +195,24 @@ try{
     await page.locator('#demo-pause').click();
   }
   await page.locator('body[data-demo-state="complete"]').waitFor({state:'attached'});
+  await page.locator('#settings').click();
+  await page.locator('#exercise').selectOption('s-curve');
+  await page.locator('#difficulty').selectOption('normal');
+  await page.locator('#start').click();
+  await page.locator('#demo').click();
+  for(const phase of [0,1,2,3]){
+    await page.locator('#coach[data-lesson-phase="'+phase+'"]').waitFor();
+    await page.locator('body[data-demo-state="paused"]').waitFor({state:'attached'});
+    await page.locator('[data-view="top"]').click();
+    await capture('28-s-curve-'+phase+'-top','S 彎往返・步驟 '+(phase+1)+'・完整道路');
+    await page.locator('[data-view="driver"]').click();
+    await capture('28-s-curve-'+phase+'-driver','S 彎往返・步驟 '+(phase+1)+'・駕駛座');
+    await page.locator('#demo-pause').click();
+  }
+  await page.locator('body[data-demo-state="complete"]').waitFor({state:'attached'});
+  await page.locator('[data-view="top"]').click();
+  await capture('28-s-curve-complete','S 彎前進通過並倒退返回起點');
+  await page.locator('[data-view="driver"]').click();
   await page.locator('#reset').click();
   await page.locator('#shortcut-toggle').click();
   await capture('15-shortcuts','常用按鈕快捷鍵');

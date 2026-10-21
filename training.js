@@ -1,3 +1,4 @@
+import {isDrivingCourse,courseDemonstration} from './courses.js';
 import {step,collision,result,corners,parkingLandmarks} from './physics.js';
 
 // One measured S manoeuvre, translated only along the road. The safe starting
@@ -18,6 +19,7 @@ function overlapInterval(body,obstacle){
   return [low,high];
 }
 export function parkingPlan(scene){
+  if(isDrivingCourse(scene))return null;
   if(scene.kind==='garage')return garagePlan(scene);
   const path=turningPath(scene);
   if(!path)return null;
@@ -65,6 +67,7 @@ function turningPath(scene){
   return r.frames;
 }
 export function demonstration(scene){
+  if(isDrivingCourse(scene))return courseDemonstration(scene);
   if(scene.kind==='garage')return garageDemonstration(scene);
   const plan=parkingPlan(scene);
   if(!plan)return null;

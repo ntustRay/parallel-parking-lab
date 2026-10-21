@@ -229,10 +229,56 @@ function buildParkingCourt(state,scenario){
   batch.flush();state.side=side;
 }
 
+function buildDrivingCourse(state,scene){
+  clearStreet(state);const group=state.street,batch=new Batches(group),area=scene.drivingArea;
+  box(group,'#8da384',0,-.18,-8,150,.2,150);
+  const shape=new THREE.Shape();area.forEach((p,i)=>i?shape.lineTo(p.x,p.z):shape.moveTo(p.x,p.z));shape.closePath();
+  const surface=new THREE.Mesh(new THREE.ShapeGeometry(shape),material('#3c464b',1));surface.rotation.x=-Math.PI/2;surface.position.y=.005;surface.receiveShadow=true;group.add(surface);
+  function strip(a,b,color,w=.14,height=.02){
+    batch.add(color,(a.x+b.x)/2,height/2+.015,-(a.z+b.z)/2,Math.hypot(b.x-a.x,b.z-a.z)+.015,height,w,boxGeometry,Math.atan2(b.z-a.z,b.x-a.x));
+  }
+  for(let i=0;i<area.length;i++){
+    const a=area[i],b=area[(i+1)%area.length];
+    strip(a,b,i%12<6?'#deddd0':'#b1b4a5',.18,.15);
+  }
+  const start=scene.start;
+  strip({x:start.x-scene.width/2+.2,z:start.z+2.8},{x:start.x+scene.width/2-.2,z:start.z+2.8},'#9bd4c5',.16);
+  if(scene.kind==='s-curve'){
+    // Subtle centre dots are a teaching aid; solid edges remain the road limits.
+    for(let i=8;i<scene.centerline.length-8;i+=10){
+      const a=scene.centerline[i],b=scene.centerline[i+2];strip(a,b,'#b6b6a2',.08);
+    }
+    for(const [i,g]of scene.gates.entries()){
+      const p=scene.centerline.reduce((best,p)=>Math.hypot(p.x-g.x,p.z-g.z)<Math.hypot(best.x-g.x,best.z-g.z)?p:best),index=scene.centerline.indexOf(p),a=scene.centerline[index-1],b=scene.centerline[index+1],d=Math.hypot(b.x-a.x,b.z-a.z),nx=(b.z-a.z)/d,nz=-(b.x-a.x)/d;
+      strip({x:g.x-nx*(scene.width/2-.2),z:g.z-nz*(scene.width/2-.2)},{x:g.x+nx*(scene.width/2-.2),z:g.z+nz*(scene.width/2-.2)},'#829e91',.08);
+      batch.add('#e4a569',g.x+nx*(scene.width/2+.45),.3,-g.z-nz*(scene.width/2+.45),.3,.6,.3,cylinderGeometry);
+    }
+    const t=scene.turnaround;
+    for(const z of [t.z-2.7,t.z+2.7])strip({x:t.x-scene.width/2+.16,z},{x:t.x+scene.width/2-.16,z},'#d6ba79',.15);
+  }else{
+    for(let x=-scene.width/2+3.25;x<scene.width/2-.1;x+=3.25)for(let z=-15;z<16;z+=3){
+      if(Math.abs(x)<.1&&z>-2&&z<8)continue;
+      strip({x,z},{x,z:z+1.4},Math.abs(x)<.1?'#d4bc78':'#d7d7c9',.1);
+    }
+  }
+  // A small training ground with low planting keeps sight lines open.
+  const minX=Math.min(...area.map(p=>p.x)),maxX=Math.max(...area.map(p=>p.x));
+  for(const x of [minX-3,maxX+3])for(const z of [-10,2,14,26]){
+    batch.add('#686e66',x,1.05,-z,.2,2.1,.2,cylinderGeometry);
+    batch.add('#5c7f60',x,2.9,-z,2.4,2.8,2.4,sphereGeometry);
+    batch.add('#bbc3b4',x,.18,-z,2,.36,2);
+  }
+  batch.flush();
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,.85),signTexture(scene.roadLabel,'#345d63','#f1ead3'));
+  sign.position.set(minX-2,1.8,3);group.add(sign);
+  box(group,'#687a72',minX-2,.85,3,.09,1.7,.09);
+  state.side=scene.side;
+}
+
 export function updateWorld(state,car,scenario,{guides=true,exam=false,braking=false,hazards=false}={}){
-  if(state.side!==scenario.side||state.kind!==scenario.kind||state.courtLength!==scenario.length){
-    if(scenario.kind==='garage')buildParkingCourt(state,scenario);else buildStreet(state,scenario.side);
-    state.kind=scenario.kind;state.courtLength=scenario.length;
+  if(state.side!==scenario.side||state.kind!==scenario.kind||state.courtLength!==scenario.length||state.roadWidth!==scenario.width){
+    if(scenario.drivingArea)buildDrivingCourse(state,scenario);else if(scenario.kind==='garage')buildParkingCourt(state,scenario);else buildStreet(state,scenario.side);
+    state.kind=scenario.kind;state.courtLength=scenario.length;state.roadWidth=scenario.width;
   }
   if(state.scenario!==scenario){
     for(const v of state.obstacles){state.world.remove(v);disposeObject(v);}state.obstacles=scenario.obstacles.map((p,i)=>{const v=makeCar(i?'#9b7d61':'#c3c8c7');v.position.set(p.x,0,-p.z);v.rotation.y=-p.angle;state.world.add(v);return v;});
@@ -252,7 +298,7 @@ export function updateWorld(state,car,scenario,{guides=true,exam=false,braking=f
       }
       const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;const c=canvas.getContext('2d');
       c.font='600 82px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillStyle=bay.active?'#b4dfcc':'#e5e5d9';c.fillText(bay.number,128,67);
-      const label=new THREE.Mesh(new THREE.PlaneGeometry(.65,.325),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
+      const label=new THREE.Mesh(new THREE.PlaneGeometry(bay.number.length>2?1.5:.65,.325),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(canvas),transparent:true,depthWrite:false,toneMapped:false}));
       label.rotation.x=-Math.PI/2;label.position.set(0,.025,L/2-.37);group.add(label);
     }
     state.scenario=scenario;state.guideKey='';
@@ -274,6 +320,6 @@ export function updateWorld(state,car,scenario,{guides=true,exam=false,braking=f
     for(const child of state.guides.children)child.geometry.dispose();state.guides.clear();
     for(const [points,color] of [[segments,'#e4c471'],[warning,'#e78570']]){const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(points,3));state.guides.add(new THREE.LineSegments(geometry,guideMaterial(color)));}state.guideKey=key;
   }
-  state.guides.visible=guides&&!exam;
+  state.guides.visible=guides&&!exam&&car.gear==='R';
 }
 

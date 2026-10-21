@@ -93,7 +93,25 @@ export function parkingLandmarks(car,scene){
   const frontRearZ=scene.obstacles[0].z-CAR.length/2;
   return {rearAlignment:car.z-CAR.length/2*Math.cos(car.angle)-frontRearZ,rearAxleAlignment:rearAxleZ-frontRearZ,outerRearWheelX,outerRearWheelToLine:outerRearWheelX-outerLine,targetAngle:35,sideGap:scene.sideGap};
 }
-export function collision(s,scene){const p=corners(s),bounds=scene.bounds||{minX:ROAD.oppositeCurb,maxX:ROAD.curb,maxZ:24};return p.some(v=>v.x*scene.side>=bounds.maxX||v.x*scene.side<=bounds.minX||Math.abs(v.z)>bounds.maxZ)||scene.obstacles.some(v=>overlap(p,corners(v)));}
+function pointInArea(point,polygon){
+  let inside=false;
+  for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+    const a=polygon[i],b=polygon[j];
+    if((a.z>point.z)!==(b.z>point.z)&&point.x<(b.x-a.x)*(point.z-a.z)/(b.z-a.z)+a.x)inside=!inside;
+  }
+  return inside;
+}
+function segmentsCross(a,b,c,d){
+  const cross=(p,q,r)=>(q.x-p.x)*(r.z-p.z)-(q.z-p.z)*(r.x-p.x);
+  return cross(a,b,c)*cross(a,b,d)<-1e-12&&cross(c,d,a)*cross(c,d,b)<-1e-12;
+}
+function outsideArea(p,area){
+  if(p.some(v=>!pointInArea(v,area)))return true;
+  return p.some((a,i)=>area.some((c,j)=>segmentsCross(a,p[(i+1)%p.length],c,area[(j+1)%area.length])));
+}
+export function collision(s,scene){const p=corners(s);
+  if(scene.drivingArea)return outsideArea(p,scene.drivingArea)||scene.obstacles.some(v=>overlap(p,corners(v)));
+  const bounds=scene.bounds||{minX:ROAD.oppositeCurb,maxX:ROAD.curb,maxZ:24};return p.some(v=>v.x*scene.side>=bounds.maxX||v.x*scene.side<=bounds.minX||Math.abs(v.z)>bounds.maxZ)||scene.obstacles.some(v=>overlap(p,corners(v)));}
 export function targetPosition(point,scene){
   const dx=point.x-scene.target.x,dz=point.z-scene.target.z,a=scene.target.angle||0;
   return {x:dx*Math.cos(a)-dz*Math.sin(a),z:dx*Math.sin(a)+dz*Math.cos(a)};
@@ -102,7 +120,7 @@ function insideBay(s,scene,margin=0){return corners(s).every(point=>{const p=tar
 function pointSegment(point,a,b){const dx=b.x-a.x,dz=b.z-a.z,t=clamp(((point.x-a.x)*dx+(point.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);return Math.hypot(point.x-a.x-t*dx,point.z-a.z-t*dz);}
 export function proximity(s,scene){
   const p=corners(s),bounds=scene.bounds||{minX:ROAD.oppositeCurb,maxX:ROAD.curb,maxZ:24};
-  let distance=Math.min(...p.flatMap(v=>[v.x*scene.side-bounds.minX,bounds.maxX-v.x*scene.side,bounds.maxZ-Math.abs(v.z)]));
+  let distance=scene.drivingArea?Math.min(...p.map(v=>Math.min(...scene.drivingArea.map((a,i)=>pointSegment(v,a,scene.drivingArea[(i+1)%scene.drivingArea.length]))))):Math.min(...p.flatMap(v=>[v.x*scene.side-bounds.minX,bounds.maxX-v.x*scene.side,bounds.maxZ-Math.abs(v.z)]));
   for(const obstacle of scene.obstacles){
     const q=corners(obstacle);if(overlap(p,q))return 0;
     for(const [vertices,edges] of [[p,q],[q,p]])for(const point of vertices)for(let i=0;i<edges.length;i++)distance=Math.min(distance,pointSegment(point,edges[i],edges[(i+1)%edges.length]));
