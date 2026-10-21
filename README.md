@@ -21,11 +21,19 @@
 
 [設定](https://ntustray.github.io/parallel-parking-lab/screenshots/01-setup.webp) · [車尾對齊觀察](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-reference.webp) · [前車角與路緣](https://ntustray.github.io/parallel-parking-lab/screenshots/05-tail-reference.webp) · [入位結束](https://ntustray.github.io/parallel-parking-lab/screenshots/08-parked.webp) · [放大鏡面](https://ntustray.github.io/parallel-parking-lab/screenshots/09-mirror.webp) · [評分畫面（尚未入位）](https://ntustray.github.io/parallel-parking-lab/screenshots/10-result.webp) · [手機](https://ntustray.github.io/parallel-parking-lab/screenshots/11-mobile.webp)
 
-圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。40 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
+圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。43 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v0.15.2.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v1.0.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v1.0.0 路邊停車完整版本
+
+- 標準格恢復 6 × 2.5 m，相鄰車各自在自己的完整車格置中，車尾對齊起步；另有 5.5 × 2.5 m 與 5 × 2.3 m 車格。
+- 方向鍵及打滿按鈕約 0.5 秒從置中打滿，左右全行程約 1 秒；放開按鍵及滑鼠都保持轉角，按 X 才回正。
+- 移除自動回正選項及其舊版設定入口，避免已儲存的偏好恢復不符合本版的控制方式。
+- 車位長寬參考[監理服務網小型車停車格劃設範圍](https://www.mvdis.gov.tw/webMvdisLaw/Download.aspx?ID=1474&type=Law)，此處採 6 × 2.5 m 為標準練習格。
+- 接下來依序發展倒車入庫、S 彎前進／倒退、雙線道與四線道路邊迴轉；項目完成後整合為 v2.0。
 
 ## v0.15.0 車身比例、完整停車格與介面
 
@@ -149,7 +157,7 @@
 
 - Three.js WebGL renderer：共享街景與車輛模型，光影、材質與三面鏡在 GPU 合成。
 - Rear-axle bicycle model，4.40 × 1.78 m 車身、2.64 m 軸距、最大 35° 等效前輪轉角、Ackermann 左右輪轉角。
-- P / R / D、平順起步、線性加速、怠速蠕行、煞車優先、停穩才可換檔及速度相關回正。
+- P / R / D、平順起步、線性加速、怠速蠕行、煞車優先、停穩才可換檔；方向鍵放開保留轉角，X 回正。
 - 四種視角：斜俯視、正上方、跟車、駕駛座。
 - 路邊停車／倒車入庫、三種車格、左右側停車、練習／測驗模式。
 - 即時教練、倒車預測軌跡、路緣距離、角度、碰撞及前後修正計數。
@@ -161,8 +169,8 @@
 
 | 操作 | 鍵盤 |
 | --- | --- |
-| 方向盤 | 拖曳輪圈或 ← → / A D；預設保持轉角，設定可切回放手漸進回正 |
-| 打滿／回正 | Z 左打滿、X 漸進回正、V 右打滿 |
+| 方向盤 | 拖曳輪圈或 ← → / A D；約 0.5 秒從置中打滿，放開保留轉角 |
+| 打滿／回正 | Z 左打滿、X 回正、V 右打滿 |
 | 油門 | ↑ / W |
 | 煞車 | S / ↓ / Space，所有檔位一致 |
 | R 檔倒退 | 選 R 檔後，W / ↑ 或油門踏板 |

@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
 const root=path.resolve('_site'),output=path.join(root,'screenshots');
 const {version}=JSON.parse(await fs.readFile('package.json','utf8'));
-const captures=[];
+const captures=[],controlReview=[];
 await fs.mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
 try{
@@ -43,6 +43,9 @@ try{
       lessonPhase:document.querySelector('#coach')?.dataset.lessonPhase??null,
       demoState:document.body.dataset.demoState??null,
       reverseCamera:document.querySelector('#rear-toggle')?.getAttribute('aria-pressed')??null,
+      steering:Number(document.querySelector('#steer')?.value),
+      frontWheelAngle:document.querySelector('#steer-value')?.textContent,
+      handwheel:document.querySelector('#wheel-value')?.textContent,
     }));
     const layout=await page.evaluate(()=>{
       const selectors=['#coach','.mirror-left','.mirror-center','.mirror-right','#rear-panel','.steer-adjust','.gears','.actions','.camera','.look-controls','.utility-controls','#hud-toggle','#settings'];
@@ -63,12 +66,14 @@ try{
       return {regions,overlaps,coachControls:controls};
     });
     captures.push({file,title,viewport:page.viewportSize(),...state,layout});
-    const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),captures};
+    const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),controlReview,captures};
     await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
     await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停 · 步驟截圖</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}figcaption{margin-bottom:10px}</style><h1>慢慢停 · v${version} 步驟截圖</h1><p><a href="../">開始練習</a> · <a href="manifest.json">截圖紀錄</a></p><p>建置：${manifest.commit||'本機'} · ${manifest.capturedAt}</p>${captures.map(item=>`<figure><figcaption>${item.title}（${item.viewport.width} × ${item.viewport.height}）</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);
     console.log('Screenshot:',file,title);
   }
 
+  // A previous preference must not restore automatic centering in v1.
+  await page.addInitScript(()=>localStorage.setItem('parking-lab-settings',JSON.stringify({'steer-hold':false})));
   await page.goto('http://127.0.0.1:4173/');
   await page.locator('#setup[open]').waitFor();
   await page.evaluate(()=>document.fonts.ready);
@@ -76,6 +81,23 @@ try{
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
   await page.locator('#hud-toggle').click();
+  for(const [key,limit,name,label] of [
+    ['ArrowRight',100,'24-right-key-released','放開右方向鍵後，維持右打滿'],
+    ['ArrowLeft',-100,'25-left-key-released','放開左方向鍵後，維持左打滿'],
+  ]){
+    const began=await page.evaluate(()=>performance.now());
+    await page.keyboard.down(key);
+    await page.waitForFunction(target=>Number(document.querySelector('#steer').value)*Math.sign(target)>=99,limit);
+    await page.keyboard.up(key);
+    const released=await page.evaluate(()=>({at:performance.now(),steering:Number(document.querySelector('#steer').value)}));
+    await page.waitForTimeout(800);
+    const later=await page.locator('#steer').inputValue();
+    controlReview.push({key,msToLock:Math.round(released.at-began),atRelease:released.steering,afterReleaseMs:800,afterRelease:Number(later)});
+    await capture(name,label+'（已釋放 800ms）');
+  }
+  await page.keyboard.press('x');
+  await page.waitForFunction(()=>Math.abs(Number(document.querySelector('#steer').value))<1);
+  await capture('26-explicit-center','按 X 才回正方向盤');
   await page.locator('[data-view="top"]').click();
   await capture('18-start-alignment-top','起點・車尾對齊與三個完整停車格');
   await page.locator('[data-view="orbit"]').click();

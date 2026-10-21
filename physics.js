@@ -5,7 +5,7 @@ export const CAR=Object.freeze({length:4.4,width:1.78,height:1.435,wheelbase:2.6
 export const DRIVE=Object.freeze({creepForward:.65,creepReverse:.5,precisionCreep:.4,creepAcceleration:.28,creepJerk:.45,precisionLimit:.8,forwardLimit:30/3.6,reverseLimit:12/3.6,forwardAcceleration:1.8,reverseAcceleration:1.2,jerk:2.5,brakeDeceleration:6});
 // Two 3.25 m lanes, with a 2.6 m practice parking strip on each side.
 export const ROAD=Object.freeze({laneWidth:3.25,parkingWidth:2.6,curb:5,oppositeCurb:-6.7,divider:-.85,curbHeight:.15,sidewalkWidth:3.5});
-export const BAYS=Object.freeze({easy:{length:7,width:2.6},normal:{length:6.5,width:2.6},hard:{length:6,width:2.5}});
+export const BAYS=Object.freeze({normal:{length:6,width:2.5},compact:{length:5.5,width:2.5},tight:{length:5,width:2.3}});
 export function frontWheelAngles(steer){
   const center=steer*CAR.maxSteer;
   if(Math.abs(center)<1e-9)return {left:0,right:0};
@@ -70,7 +70,7 @@ export function step(s,input,dt){
 export function scenario(level='normal',side=1,kind='parallel'){
   if(kind==='garage')return garageScenario(level,side);
   const {length,width}=BAYS[level]||BAYS.normal;
-  const parkedX=(ROAD.curb-width/2)*side,obstacleZ=length+.15,sideGap=.5;
+  const parkedX=(ROAD.curb-width/2)*side,obstacleZ=length,sideGap=.5;
   const target={x:parkedX,z:0,width,length,angle:0};
   const parkingBays=[obstacleZ,0,-obstacleZ].map((z,i)=>({...target,z,active:i===1,number:String(i+1).padStart(2,'0')}));
   return {kind:'parallel',length,side,sideGap,curb:ROAD.curb*side,target,parkingBays,obstacles:[{x:parkedX,z:obstacleZ,angle:0},{x:parkedX,z:-obstacleZ,angle:0}],start:{x:parkedX-(CAR.width+sideGap)*side,z:obstacleZ,angle:0,speed:0,acceleration:0,steer:0,steerVelocity:0,steerTarget:null,gear:'P'}};
