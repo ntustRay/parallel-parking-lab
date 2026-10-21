@@ -242,8 +242,8 @@ function buildDrivingCourse(state,scene){
     const a=area[i],b=area[(i+1)%area.length],length=Math.hypot(b.x-a.x,b.z-a.z),nx=winding*(b.z-a.z)/length*.09,nz=-winding*(b.x-a.x)/length*.09;
     strip({x:a.x+nx,z:a.z+nz},{x:b.x+nx,z:b.z+nz},i%12<6?'#deddd0':'#b1b4a5',.18,.15);
   }
-  const start=scene.start;
-  strip({x:start.x-scene.width/2+.2,z:start.z+2.8},{x:start.x+scene.width/2-.2,z:start.z+2.8},'#9bd4c5',.16);
+  const start=scene.start,startWidth=scene.lane||scene.width;
+  strip({x:start.x-startWidth/2+.2,z:start.z+2.8},{x:start.x+startWidth/2-.2,z:start.z+2.8},'#9bd4c5',.16);
   if(scene.kind==='s-curve'){
     // Subtle centre dots are a teaching aid; solid edges remain the road limits.
     for(let i=8;i<scene.centerline.length-8;i+=10){
