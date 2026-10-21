@@ -213,6 +213,25 @@ try{
   await page.locator('[data-view="top"]').click();
   await capture('28-s-curve-complete','S 彎前進通過並倒退返回起點');
   await page.locator('[data-view="driver"]').click();
+  for(const kind of ['uturn-two','uturn-four']){
+    await page.locator('#settings').click();
+    await page.locator('#exercise').selectOption(kind);
+    await page.locator('#start').click();
+    await page.locator('#demo').click();
+    for(const phase of [0,1,2,3]){
+      await page.locator('#coach[data-lesson-phase="'+phase+'"]').waitFor();
+      await page.locator('body[data-demo-state="paused"]').waitFor({state:'attached'});
+      await page.locator('[data-view="top"]').click();
+      await capture('29-'+kind+'-'+phase+'-top',(kind==='uturn-two'?'雙線道多次修正':'四線道大迴轉')+'・步驟 '+(phase+1));
+      await page.locator('[data-view="driver"]').click();
+      if(phase===1||phase===2)await capture('29-'+kind+'-'+phase+'-driver','迴轉・步驟 '+(phase+1)+'・駕駛視線');
+      await page.locator('#demo-pause').click();
+    }
+    await page.locator('body[data-demo-state="complete"]').waitFor({state:'attached'});
+    await page.locator('[data-view="top"]').click();
+    await capture('29-'+kind+'-complete','迴轉完成・返回反向車道並停妥');
+    await page.locator('[data-view="driver"]').click();
+  }
   await page.locator('#reset').click();
   await page.locator('#shortcut-toggle').click();
   await capture('15-shortcuts','常用按鈕快捷鍵');
