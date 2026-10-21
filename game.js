@@ -5,6 +5,7 @@ import {advanceLook} from './view.js';
 import {demonstration,parkingPlan} from './training.js';
 import {bindSteering,STEERING_LOCK} from './steering.js';
 import {Renderer} from './renderer.js';import {step,scenario,collision,metrics,result,clamp,drivingInput,CAR,proximity} from './physics.js';
+window.parkingBoot?.stage('正在建立車輛、道路與後視鏡…');
 const audio=new GameAudio();
 const $=id=>document.getElementById(id),render=new Renderer($('world')),rearRender=new Renderer($('rear-view')),keys=new Set(),input={turn:0,throttle:false,brake:false},views=['driver','orbit','top','chase'];let scene=scenario(),car={...scene.start},stats={hits:0,corrections:0,time:0},started=false,exam=false,finished=false,lastDirection=null,touchGas=false,touchBrake=false,steeringHeld=false,hitLatch=false,toastUntil=0,history=[],demoFrames=null,demoIndex=0,demonstrated=false,lastHitPosition=null;
 let hazards=false,hazardLit=false,readyNotified=false;
@@ -127,10 +128,11 @@ if(picture!==lastPicture&&now-lastPictureAt>=40){
   render.adaptQuality(dt);
   for(const m of [leftMirror,centerMirror,rightMirror]){if(m.w!==m.canvas.clientWidth||m.h!==m.canvas.clientHeight)m.resize();m.mirrorTilt=$('mirror-curb').checked?-12:-4;m.draw(car,scene,{guides:false,exam:true,braking:Boolean(input.brake)||car.gear==='P',hazards:hazardLit});}
   if(rearVisible){if(rearRender.w!==$('rear-view').clientWidth||rearRender.h!==$('rear-view').clientHeight)rearRender.resize();rearRender.draw(car,scene,{guides:false,exam:true,braking:Boolean(input.brake)||car.gear==='P',hazards:hazardLit});}
-  render.draw(car,scene,{guides:$('guides').checked&&(render.view!=='driver'||document.body.classList.contains('show-aids')),exam,hits:stats.hits,braking:Boolean(input.brake)||car.gear==='P',hazards:hazardLit});lastPicture=picture;lastPictureAt=now;
+  render.draw(car,scene,{guides:$('guides').checked&&(render.view!=='driver'||document.body.classList.contains('show-aids')),exam,hits:stats.hits,braking:Boolean(input.brake)||car.gear==='P',hazards:hazardLit});lastPicture=picture;lastPictureAt=now;window.parkingBoot?.ready();
 }
 requestAnimationFrame(frame);}
-initialiseFeedback();setView('driver');update();requestAnimationFrame(frame);$('setup').showModal();
+window.addEventListener('parking:ready',()=>$('setup').showModal(),{once:true});
+initialiseFeedback();setView('driver');update();requestAnimationFrame(frame);if(!window.parkingBoot)$('setup').showModal();
 
 
 let impactTimer;

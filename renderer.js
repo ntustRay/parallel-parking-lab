@@ -7,6 +7,7 @@ function engine(canvas){
   let renderer;
   try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
   catch(error){
+    if(window.parkingBoot){window.parkingBoot.fail('瀏覽器無法啟動 3D 圖形。請開啟圖形加速，或改用支援 WebGL 2 的瀏覽器。');throw error;}
     document.body.classList.add('startup-failed');
     const notice=document.createElement('main');notice.id='startup-error';
     notice.innerHTML='<span class="startup-mark" aria-hidden="true">P</span><h1>3D 場景未能啟動</h1><p>瀏覽器目前無法使用 WebGL 2。請檢查圖形加速設定，或改用支援 WebGL 2 的瀏覽器後再試。</p><button type="button">重新整理</button>';

@@ -23,6 +23,7 @@ const css=await fs.readFile(path.join(root,'style.css'),'utf8');
 const license=await fs.readFile(path.join(root,'vendor/THREE-LICENSE.txt'),'utf8');
 const appLicense=await fs.readFile(path.join(root,'LICENSE'),'utf8');
 const data=JSON.stringify(ordered).replaceAll('<','\\u003c');
+const bootSource=await fs.readFile(path.join(root,'bootstrap.js'),'utf8');
 const bootstrap=`
 const modules=JSON.parse(document.querySelector('#offline-modules').textContent),urls={};
 try{
@@ -33,7 +34,8 @@ try{
     });
     urls[file]=URL.createObjectURL(new Blob([resolved],{type:'text/javascript'}));
   }
-  await import(urls['game.js']);
+  const start=${JSON.stringify(bootSource)}.replace("import('./game.js')",'import('+JSON.stringify(urls['game.js'])+')');
+  await import(URL.createObjectURL(new Blob([start],{type:'text/javascript'})));
 }catch(error){
   console.error(error);
   if(!document.querySelector('#startup-error')){
@@ -47,7 +49,7 @@ try{
 `;
 let html=await fs.readFile(path.join(root,'index.html'),'utf8');
 html=html.replace('<link rel="stylesheet" href="style.css">',()=>'<style>'+css+'</style>');
-html=html.replace('<script type="module" src="game.js"></script>',()=>'<script type="application/json" id="offline-modules">'+data+'</script><script type="module">'+bootstrap+'</script>');
+html=html.replace('<script type="module" src="bootstrap.js"></script>',()=>'<script type="application/json" id="offline-modules">'+data+'</script><script type="module">'+bootstrap+'</script>');
 html=html.replace('</head>',()=>'<meta name="parking-build" content="offline-v'+version+'"><!-- '+appLicense.replaceAll('--','—')+'\nThree.js: '+license.replaceAll('--','—')+' --></head>');
 const destination=path.join(root,'dist','parking-lab-v'+version+'.html');
 await fs.mkdir(path.dirname(destination),{recursive:true});await fs.writeFile(destination,html);

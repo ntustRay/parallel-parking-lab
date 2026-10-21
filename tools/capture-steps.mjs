@@ -6,6 +6,7 @@ const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(proces
 const root=path.resolve('_site'),output=path.join(root,'screenshots');
 const {version}=JSON.parse(await fs.readFile('package.json','utf8'));
 const captures=[],controlReview=[];
+let releaseLoading;const loadingGate=new Promise(resolve=>releaseLoading=resolve);
 await fs.mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
 try{
@@ -19,6 +20,7 @@ try{
     const file=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
     if(!file.startsWith(root+path.sep)){await route.fulfill({status:403,body:'Forbidden'});return;}
     try{
+      if(path.basename(file).startsWith('game.'))await loadingGate;
       const body=await fs.readFile(file);
       await route.fulfill({body,contentType:({'.html':'text/html; charset=utf-8','.js':'text/javascript','.css':'text/css'})[path.extname(file)]||'application/octet-stream'});
     }catch(error){
@@ -39,6 +41,7 @@ try{
     const file=name+'.webp';
     await fs.writeFile(path.join(output,file),Buffer.from(base64,'base64'));
     const state=await page.evaluate(()=>({
+      loading:!document.querySelector('#loading')?.hidden,
       view:document.querySelector('[data-view].selected')?.dataset.view??null,
       lessonPhase:document.querySelector('#coach')?.dataset.lessonPhase??null,
       demoState:document.body.dataset.demoState??null,
@@ -48,6 +51,7 @@ try{
       handwheel:document.querySelector('#wheel-value')?.textContent,
     }));
     const layout=await page.evaluate(()=>{
+      if(!document.querySelector('#loading')?.hidden)return {regions:[],overlaps:[],coachControls:[]};
       const selectors=['#coach','.mirror-left','.mirror-center','.mirror-right','#rear-panel','.steer-adjust','.gears','.actions','.camera','.look-controls','.utility-controls','#hud-toggle','#settings'];
       const regions=selectors.flatMap(selector=>{
         const el=document.querySelector(selector),css=el&&getComputedStyle(el),r=el?.getBoundingClientRect();
@@ -74,7 +78,10 @@ try{
 
   // A previous hold preference must not disable fast keyboard return in v1.
   await page.addInitScript(()=>localStorage.setItem('parking-lab-settings',JSON.stringify({'steer-hold':true})));
-  await page.goto('http://127.0.0.1:4173/');
+  await page.goto('http://127.0.0.1:4173/',{waitUntil:'commit'});
+  await page.locator('#loading').waitFor();
+  await capture('00-loading','首次載入・等待3D模組時顯示載入圖示');
+  releaseLoading();
   await page.locator('#setup[open]').waitFor();
   await page.evaluate(()=>document.fonts.ready);
   await capture('01-setup','設定練習');
