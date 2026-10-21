@@ -25,7 +25,13 @@
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v0.14.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v0.14.1.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v0.14.1 發版流程修正
+
+- 修正 versions job 因補建歷史 tag 遭 GitHub 403 拒絕，導致整體 workflow 顯示失敗。
+- 自動標記本輪 build 的當前版本；歷史 tag 不納入每次部署。當前 tag 建立失敗仍會使該 job 失敗。
+- 標籤請求加入 15 秒 timeout，並限制 tag、build 與 deploy job 的最長時間。
 
 ## v0.14.0 場景與車輛回饋
 
@@ -43,7 +49,7 @@
 - R 檔移動時，依車身至相鄰車輛與邊界的最近距離發出接近提示。碰撞有短暫邊框回饋，停妥成功有提示音。
 - 常用按鈕標示快捷鍵；「快捷鍵」或 ?／F1 開啟完整說明。F 前進、R 倒車、P 停車；Z／X／V 左打滿／回正／右打滿；1–4 視角、T 教學、B 倒車顯影、U 示範、I 示範暫停、O 按住觀察、E 提交、G 設定。原有 W／S／A／D、方向鍵、Space、Q、C、H、J／K／L 保留。
 - 表單、選單與滑桿有焦點時，駕駛快捷鍵停用；按鈕的 Enter 仍使用原生操作。
-- Actions 會依 package.json 歷史為 v0.11 起各版建立 annotated tag；重跑只補缺漏，不覆蓋舊 tag。
+- Actions 在 build 成功後為當前 package.json 版本建立 annotated tag；重跑保留既有 tag。v0.11–v0.13 的歷史 commit 已保留，舊 tag 另列待辦，需要足夠的 workflow 權限。
 
 ## v0.12.0 倒車入庫
 
@@ -208,7 +214,7 @@ npm run screenshots
 
 ## 迭代清單
 
-目前版本：**0.14.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
+目前版本：**0.14.1**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
 
 - [x] v0.1：路邊停車、四種視角、即時教練與評分。
 - [x] 煞車優先、停穩換檔、左右側鏡像、接觸碰撞計數。
