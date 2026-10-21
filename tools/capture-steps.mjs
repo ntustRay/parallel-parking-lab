@@ -45,7 +45,7 @@ try{
       reverseCamera:document.querySelector('#rear-toggle')?.getAttribute('aria-pressed')??null,
     }));
     const layout=await page.evaluate(()=>{
-      const selectors=['#coach','.mirror-left','.mirror-center','.mirror-right','#rear-panel','.steer-adjust','.gears','.actions','.camera','.utility-controls','#hud-toggle','#settings'];
+      const selectors=['#coach','.mirror-left','.mirror-center','.mirror-right','#rear-panel','.steer-adjust','.gears','.actions','.camera','.look-controls','.utility-controls','#hud-toggle','#settings'];
       const regions=selectors.flatMap(selector=>{
         const el=document.querySelector(selector),css=el&&getComputedStyle(el),r=el?.getBoundingClientRect();
         if(!el||el.closest('[hidden]')||css.display==='none'||css.visibility==='hidden'||!r.width||!r.height)return [];
@@ -57,7 +57,7 @@ try{
         if(w>2&&h>2)overlaps.push([a.selector,b.selector,Math.round(w),Math.round(h)]);
       }
       const coach=document.querySelector('#coach'),panel=coach.getBoundingClientRect();
-      const controls=[...coach.querySelectorAll('.coach-tools button')].filter(el=>!el.hidden&&getComputedStyle(el).display!=='none').map(el=>{
+      const controls=(regions.some(region=>region.selector==='#coach')?[...coach.querySelectorAll('.coach-tools button')]:[]).filter(el=>!el.hidden&&getComputedStyle(el).display!=='none').map(el=>{
         const r=el.getBoundingClientRect();return {id:el.id,bottom:Math.round(r.bottom),panelBottom:Math.round(panel.bottom),clipped:r.bottom>panel.bottom-2};
       });
       return {regions,overlaps,coachControls:controls};
