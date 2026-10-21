@@ -72,8 +72,8 @@ try{
     console.log('Screenshot:',file,title);
   }
 
-  // A previous preference must not restore automatic centering in v1.
-  await page.addInitScript(()=>localStorage.setItem('parking-lab-settings',JSON.stringify({'steer-hold':false})));
+  // A previous hold preference must not disable fast keyboard return in v1.
+  await page.addInitScript(()=>localStorage.setItem('parking-lab-settings',JSON.stringify({'steer-hold':true})));
   await page.goto('http://127.0.0.1:4173/');
   await page.locator('#setup[open]').waitFor();
   await page.evaluate(()=>document.fonts.ready);
@@ -81,23 +81,27 @@ try{
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
   await page.locator('#hud-toggle').click();
-  for(const [key,limit,name,label] of [
-    ['ArrowRight',100,'24-right-key-released','放開右方向鍵後，維持右打滿'],
-    ['ArrowLeft',-100,'25-left-key-released','放開左方向鍵後，維持左打滿'],
+  for(const [key,limit,heldName,releasedName,label] of [
+    ['ArrowRight',100,'24-right-key-held','25-right-key-released','右'],
+    ['ArrowLeft',-100,'26-left-key-held','27-left-key-released','左'],
   ]){
     const began=await page.evaluate(()=>performance.now());
     await page.keyboard.down(key);
     await page.waitForFunction(target=>Number(document.querySelector('#steer').value)*Math.sign(target)>=99,limit);
+    const locked=await page.evaluate(()=>({at:performance.now(),steering:Number(document.querySelector('#steer').value)}));
+    await capture(heldName,'按住'+label+'方向鍵，快速打滿');
     await page.keyboard.up(key);
-    const released=await page.evaluate(()=>({at:performance.now(),steering:Number(document.querySelector('#steer').value)}));
-    await page.waitForTimeout(800);
-    const later=await page.locator('#steer').inputValue();
-    controlReview.push({key,msToLock:Math.round(released.at-began),atRelease:released.steering,afterReleaseMs:800,afterRelease:Number(later)});
-    await capture(name,label+'（已釋放 800ms）');
+    const releasedAt=await page.evaluate(()=>performance.now());
+    await page.waitForFunction(()=>Math.abs(Number(document.querySelector('#steer').value))<1);
+    const centered=await page.evaluate(()=>({at:performance.now(),steering:Number(document.querySelector('#steer').value)}));
+    controlReview.push({key,msToLock:Math.round(locked.at-began),atLock:locked.steering,msToCenter:Math.round(centered.at-releasedAt),afterRelease:centered.steering});
+    await capture(releasedName,'放開'+label+'方向鍵，自動快速回正');
   }
+  await page.keyboard.press('v');
+  await page.waitForFunction(()=>Number(document.querySelector('#steer').value)>=99);
   await page.keyboard.press('x');
   await page.waitForFunction(()=>Math.abs(Number(document.querySelector('#steer').value))<1);
-  await capture('26-explicit-center','按 X 才回正方向盤');
+  await capture('28-explicit-center','打滿按鈕可固定角度，按 X 快速回正');
   await page.locator('[data-view="top"]').click();
   await capture('18-start-alignment-top','起點・車尾對齊與三個完整停車格');
   await page.locator('[data-view="orbit"]').click();
