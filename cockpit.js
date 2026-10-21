@@ -99,9 +99,9 @@ function dial(ctx,cx,cy,r,start,end,value,label,color){
   }
   const a=start+(end-start)*Math.max(0,Math.min(1,value));ctx.strokeStyle=color;ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*(r-26),cy+Math.sin(a)*(r-26));ctx.stroke();ctx.fillStyle='#324958';ctx.beginPath();ctx.arc(cx,cy,13,0,Math.PI*2);ctx.fill();ctx.fillStyle='#9cb2c8';ctx.font='19px sans-serif';ctx.fillText(label,cx,cy+43);
 }
-export function updateCockpit(cabin,car,scenario){
+export function updateCockpit(cabin,car,scenario,{braking=false,hazards=false}={}){
   const data=cabin.userData;data.rotating.rotation.z=-car.steer*STEERING_LOCK*Math.PI/180;
-  const key=[(Math.abs(car.speed)*3.6).toFixed(1),car.gear,car.steer.toFixed(2),car.x.toFixed(1),car.z.toFixed(1),car.angle.toFixed(2),scenario.length].join(':');
+  const key=[(Math.abs(car.speed)*3.6).toFixed(1),car.gear,car.steer.toFixed(2),car.x.toFixed(1),car.z.toFixed(1),car.angle.toFixed(2),scenario.length,braking,hazards].join(':');
   if(key===data.lastKey)return;data.lastKey=key;
   const c=data.instruments.ctx;c.fillStyle='#08131e';c.fillRect(0,0,960,340);
   dial(c,190,205,128,Math.PI*.78,Math.PI*2.22,Math.abs(car.speed)*3.6/40,'km/h','#78bdff');
@@ -110,4 +110,6 @@ export function updateCockpit(cabin,car,scenario){
   c.fillStyle='#f1f7ff';c.font='600 88px sans-serif';c.fillText((Math.abs(car.speed)*3.6).toFixed(1),480,166);
   c.font='23px sans-serif';c.fillStyle='#97b1ca';c.fillText('km/h',480,204);
   c.strokeStyle=car.gear==='R'?'#e4b775':'#7baace';c.lineWidth=2;c.strokeRect(445,231,70,64);c.fillStyle=car.gear==='R'?'#e4b775':'#d3e9ff';c.font='43px sans-serif';c.fillText(car.gear,480,280);data.instruments.texture.needsUpdate=true;
+  c.font='28px sans-serif';c.fillStyle=hazards?'#f0c578':'#293c49';c.fillText('◀',407,275);c.fillText('▶',552,275);
+  if(braking){c.font='18px sans-serif';c.fillStyle='#df968c';c.fillText('BRAKE',480,324);}
 }

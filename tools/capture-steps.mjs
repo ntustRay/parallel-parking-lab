@@ -116,10 +116,38 @@ try{
   await page.locator('#result[open]').waitFor();
   await capture('10-result','評分畫面（重新開始後直接提交，尚未入位）');
   await page.locator('#again').click();
-  await page.locator('#hud-toggle').click();
+  await page.locator('#settings').click();
+  await page.locator('#exercise').selectOption('garage');
+  await page.locator('#difficulty').selectOption('normal');
+  await page.locator('#start').click();
+  if(await page.locator('#hud-toggle').getAttribute('aria-pressed')!=='true')await page.locator('#hud-toggle').click();
+  await page.locator('#demo-stepwise').check();
+  await page.locator('#demo').click();
+  for(const phase of [0,1,2,3]){
+    await page.locator('#coach[data-lesson-phase="'+phase+'"]').waitFor();
+    await page.locator('body[data-demo-state="paused"]').waitFor({state:'attached'});
+    await page.locator('#toast.show').waitFor({state:'hidden'});
+    await capture('14-garage-'+phase,'倒車入庫・步驟 '+(phase+1)+'・第一人稱');
+    await page.locator('[data-view="top"]').click();
+    await capture('14-garage-'+phase+'-top','倒車入庫・步驟 '+(phase+1)+'・俯視比例');
+    await page.locator('[data-view="driver"]').click();
+    await page.locator('#demo-pause').click();
+  }
+  await page.locator('body[data-demo-state="complete"]').waitFor({state:'attached'});
+  await page.locator('#reset').click();
+  await page.locator('#shortcut-toggle').click();
+  await capture('15-shortcuts','常用按鈕快捷鍵');
+  await page.locator('#shortcuts-close').click();
+  await page.locator('#settings').click();
+  await page.locator('.audio-settings summary').click();
+  await capture('16-audio','音效與音樂設定');
+  await page.locator('#start').click();
+  if(await page.locator('#hud-toggle').getAttribute('aria-pressed')==='true')await page.locator('#hud-toggle').click();
   await page.setViewportSize({width:390,height:844});
   await page.locator('#toast.show').waitFor({state:'hidden'});
   await capture('11-mobile','手機第一人稱');
+  await page.setViewportSize({width:844,height:390});
+  await capture('17-landscape','手機橫向第一人稱');
 
 }finally{
   await browser.close();

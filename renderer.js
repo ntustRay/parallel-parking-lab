@@ -88,7 +88,7 @@ export class Renderer{
   draw(car,scenario,options={}){
     updateWorld(shared,car,scenario,options);this.pointCamera(car);shared.player.visible=this.view!=='driver'&&this.view!=='rear';
     shared.cabin.visible=this.view==='driver';
-    if(shared.cabin.visible){shared.cabin.position.copy(shared.player.position);shared.cabin.rotation.y=-car.angle;updateCockpit(shared.cabin,car,scenario);}
+    if(shared.cabin.visible){shared.cabin.position.copy(shared.player.position);shared.cabin.rotation.y=-car.angle;updateCockpit(shared.cabin,car,scenario,options);}
     const gpu=shared.renderer;
     const shadowKey=[car.x,car.z,car.angle,car.steer,scenario.side,scenario.length].join(':');
     if(shadowKey!==shared.shadowKey&&performance.now()-shared.lastShadow>130){gpu.shadowMap.needsUpdate=true;shared.lastShadow=performance.now();shared.shadowKey=shadowKey;}

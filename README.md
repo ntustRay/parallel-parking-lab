@@ -1,4 +1,4 @@
-# 慢慢停 · 第一人稱路邊停車
+# 慢慢停 · 第一人稱停車練習
 
 **坐進駕駛座，用後視鏡與車內視線練習路邊停車。**
 
@@ -21,11 +21,20 @@
 
 [設定](https://ntustray.github.io/parallel-parking-lab/screenshots/01-setup.webp) · [車尾對齊觀察](https://ntustray.github.io/parallel-parking-lab/screenshots/04-rear-reference.webp) · [前車角與路緣](https://ntustray.github.io/parallel-parking-lab/screenshots/05-tail-reference.webp) · [入位結束](https://ntustray.github.io/parallel-parking-lab/screenshots/08-parked.webp) · [放大鏡面](https://ntustray.github.io/parallel-parking-lab/screenshots/09-mirror.webp) · [評分畫面（尚未入位）](https://ntustray.github.io/parallel-parking-lab/screenshots/10-result.webp) · [手機](https://ntustray.github.io/parallel-parking-lab/screenshots/11-mobile.webp)
 
-圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。23 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
+圖庫另含四種視角的三面後視鏡，以及[手動開啟倒車鏡頭](https://ntustray.github.io/parallel-parking-lab/screenshots/13-driver-rear-on.webp)。34 張畫面由獨立腳本操作介面產生。示範在實際階段暫停後截圖，不做分數斷言、圖片比對、E2E 或 unit test；截圖異常不阻擋遊戲部署。
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v0.13.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v0.14.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v0.14.0 場景與車輛回饋
+
+- 車身加入清漆與日光環境反射、五輻輪圈與接地陰影；保留近似實車尺寸及既有第一人稱眼位。
+- 煞車燈隨煞車亮起、R 檔亮倒車燈；新增雙黃燈按鈕與 Y 快捷鍵，外觀及車內儀表同步。
+- 目標車格增加低彩度填色及四角提示，預測軌跡在即將碰撞處以紅色收尾。
+- 兩種關卡三種尺寸都可看示範，自己入位停穩後會提示按 E 提交。
+- 圖庫新增倒車入庫四步的駕駛座／俯視、快捷鍵、音訊設定及手機橫向截圖。
+- [倒車入庫截圖](https://ntustray.github.io/parallel-parking-lab/screenshots/14-garage-2-top.webp) · [快捷鍵](https://ntustray.github.io/parallel-parking-lab/screenshots/15-shortcuts.webp) · [音訊設定](https://ntustray.github.io/parallel-parking-lab/screenshots/16-audio.webp)
 
 ## v0.13.0 聲音、回饋與快捷鍵
 
@@ -125,10 +134,10 @@
 ## 已實作
 
 - Three.js WebGL renderer：共享街景與車輛模型，光影、材質與三面鏡在 GPU 合成。
-- Rear-axle bicycle model，4.63 × 1.78 m 車身、2.70 m 軸距、最大 35° 等效前輪轉角、Ackermann 左右輪轉角。
+- Rear-axle bicycle model，4.40 × 1.78 m 車身、2.64 m 軸距、最大 35° 等效前輪轉角、Ackermann 左右輪轉角。
 - P / R / D、平順起步、線性加速、怠速蠕行、煞車優先、停穩才可換檔及速度相關回正。
 - 四種視角：斜俯視、正上方、跟車、駕駛座。
-- 三種車位長度、左右側停車、練習／測驗模式。
+- 路邊停車／倒車入庫、三種車格、左右側停車、練習／測驗模式。
 - 即時教練、倒車預測軌跡、路緣距離、角度、碰撞及前後修正計數。
 - SAT 車身碰撞；練習允許 12 cm 標線餘裕及角度 < 12°，測驗嚴格四角入位及角度 < 8°；兩者均需停穩。
 - 依位置、平行、路緣給分，另列碰撞與修正扣分；最近 50 次結果保存在 localStorage。
@@ -138,12 +147,12 @@
 
 | 操作 | 鍵盤 |
 | --- | --- |
-| 方向盤 | 拖曳輪圈或 ← → / A D；放開後由慢到快回正，靜止與倒車也適用 |
+| 方向盤 | 拖曳輪圈或 ← → / A D；預設保持轉角，設定可切回放手漸進回正 |
 | 打滿／回正 | Z 左打滿、X 漸進回正、V 右打滿 |
 | 油門 | ↑ / W |
 | 煞車 | S / ↓ / Space，所有檔位一致 |
 | R 檔倒退 | 選 R 檔後，W / ↑ 或油門踏板 |
-| 前進／倒車 | 停穩後 Q 切換 D / R；R 選倒車、P 選停車，或點畫面 P / R / D |
+| 前進／倒車 | 停穩後 Q 切換 D / R；F 前進、R 倒車、P 停車，或點畫面 P / R / D |
 | 看左／右 | 按住 J / L，放開回正 |
 | 看正前方 | K；或按畫面中的視線按鈕 |
 | 自由轉頭 | 拖曳擋風玻璃，可往後側看；放開後平順回到前方 |
@@ -154,7 +163,7 @@
 | 放大後視鏡 | 點鏡面或聚焦後 Enter；再點一次或 Esc 縮小 |
 | 顯示／隱藏軌跡 | H |
 | 提交／設定／說明 | E／G／? 或 F1 |
-| 全靜音／音樂 | M／N |
+| 全靜音／音樂／雙黃燈 | M／N／Y |
 
 主要練習請維持第一人稱，先觀察後視鏡，再慢慢操作。需要釐清車身旋轉方式時，可暫時切換俯視，再回到駕駛座。練習目標是車身四角在框內、與路緣平行、完全停穩。
 
@@ -185,6 +194,9 @@ npm run screenshots
 | 檔案 | 責任 |
 | --- | --- |
 | physics.js | 純函式車輛模型、SAT 碰撞、場景與評分 |
+| audio.js | 本地音效、音樂、音量偏好與接近提示 |
+| shortcuts.js | 按鈕快捷鍵與說明 |
+| lessons.js | 各關卡的四步教練與觀察點 |
 | training.js | 以實際物理模擬規劃無碰撞的示範駕駛 |
 | scene.js | 光影、材質、街道與車輛模型、靜態物件 Instancing |
 | renderer.js | 共享 WebGL context、GPU 鏡面合成與四種攝影機 |
@@ -196,7 +208,7 @@ npm run screenshots
 
 ## 迭代清單
 
-目前版本：**0.13.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
+目前版本：**0.14.0**。教練提示依本場景調整、重新練習保留視角，碰撞接觸不會因持續踩油門而重複灌次數。
 
 - [x] v0.1：路邊停車、四種視角、即時教練與評分。
 - [x] 煞車優先、停穩換檔、左右側鏡像、接觸碰撞計數。
@@ -213,7 +225,8 @@ npm run screenshots
 - [ ] 不同車型與自訂軸距。
 - [x] v0.2：低速練習、碰撞檢查的示範入位（寬鬆與標準車位），不計入個人成績。
 - [ ] 個人練習軌跡重播與緊湊車位多次修正示範。
-- [ ] 更多關卡：倒車入庫、斜角車位、S 型練習。
+- [x] v0.11–0.14：友善比例、倒車入庫、音樂音效、快捷鍵與 3D 改善。
+- [ ] 更多關卡：斜角車位、S 型練習。
 
 ## 範圍
 
