@@ -13,10 +13,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   versions:
+    name: Publish Releases
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -24,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Publish current version tag without overwriting existing tags
+      - name: Publish Releases and offline download without overwriting tags
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node tools/tag-versions.mjs
