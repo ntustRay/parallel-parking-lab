@@ -1,0 +1,38 @@
+{
+  "version": "2.0.2",
+  "commit": "2225531e4988a3b941df8b64a4d3baf8b8723b91",
+  "appBuild": "ac1e853ecf29",
+  "capturedAt": "2026-10-22T14:40:44Z",
+  "captures": [
+    {
+      "file": "02-driver.webp",
+      "title": "第一人稱・儀表與前擋",
+      "yaw": 0,
+      "lookLabel": "正前方",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "file": "cabin-left.webp",
+      "title": "左側・完整門板與底板",
+      "yaw": -90,
+      "lookLabel": "左側 90°",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "file": "cabin-right.webp",
+      "title": "右側・副駕座與門板",
+      "yaw": 90,
+      "lookLabel": "右側 90°",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    }
+  ]
+}

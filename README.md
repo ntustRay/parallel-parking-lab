@@ -78,17 +78,28 @@ npm run build
 # 輸出 _site/
 ```
 
-產生操作截圖與 WebP 圖庫時，再安裝擷取用瀏覽器：
+執行 unit tests（不需要瀏覽器）：
+
+```sh
+npm test
+```
+
+涵蓋車輛動態、轉向與快速回正、碰撞與入位評分、五項課程的左右物理示範，以及第一人稱門板／底板遮蔽、窗戶開口與轉頭近裁切。
+
+需要目視核對時，才安裝擷取用瀏覽器：
 
 ```sh
 npm install --no-save --package-lock=false playwright@1.56.1
 npx playwright install chromium
 npm run build
 npm run screenshots
-# 輸出 _site/screenshots/，包含圖庫與 manifest.json
+# 擷取前、左、右、後四張車內圖，輸出 _site/screenshots/
+# npm run screenshots:full 可手動擷取完整操作流程
 ```
 
-遊戲程式更新時，GitHub Actions 負責 build、操作截圖與 Pages 部署；純文件或發佈流程更新會保留線上遊戲與圖庫。版本更新發布在 [Releases](https://github.com/ntustRay/parallel-parking-lab/releases)，以 [CHANGELOG.md](CHANGELOG.md) 作為發佈說明來源，並附上由對應 tag 建立的離線 HTML；重跑不覆寫既有 tag 或已上傳的檔案。
+GitHub Actions 預設執行 unit tests、靜態／離線建置與 Pages 部署，不安裝瀏覽器或跑 E2E。需要截圖時，可手動執行 workflow 並勾選 `visual_review`，或在提交訊息加上 `[visual-check]`，額外擷取四張車內圖；這個獨立工作不影響正常部署。已核對的圖庫存於 `docs/screenshots/`，隨網站建置保留。
+
+純文件或發佈流程更新會保留線上遊戲與圖庫。版本更新發布在 [Releases](https://github.com/ntustRay/parallel-parking-lab/releases)，以 [CHANGELOG.md](CHANGELOG.md) 作為發佈說明來源，並附上由對應 tag 建立的離線 HTML；重跑不覆寫既有 tag 或已上傳的檔案。
 
 ## 程式結構
 
@@ -96,7 +107,7 @@ npm run screenshots
 | --- | --- |
 | `physics.js`、`courses.js` | 車輛模型、課程配置、碰撞、路線進度與評分 |
 | `training.js`、`lessons.js` | 示範路線、四階段教學與觀察點 |
-| `scene.js`、`renderer.js`、`cockpit.js` | 3D 場景、車內視角、後視鏡與 GPU 合成 |
+| `scene.js`、`renderer.js`、`cockpit.js`、`cabin-shell.js` | 3D 場景、完整車內模型、後視鏡與 GPU 合成 |
 | `game.js`、`steering.js` | 模擬迴圈、操作與介面狀態 |
 | `audio.js`、`shortcuts.js` | 音樂音效與快捷鍵 |
 | `tools/` | 靜態／離線產物、操作截圖及版本發佈 |

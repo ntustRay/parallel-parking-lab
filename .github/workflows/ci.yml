@@ -1,9 +1,14 @@
-name: Build, screenshots & Pages
+name: Unit tests, build & Pages
 on:
   push:
-    branches: [main]
+    branches: [main, 'review/**']
   pull_request:
   workflow_dispatch:
+    inputs:
+      visual_review:
+        description: Capture four cabin views for a visual review
+        type: boolean
+        default: false
 permissions:
   contents: read
   pages: write
@@ -31,7 +36,7 @@ jobs:
         run: node tools/tag-versions.mjs
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     outputs:
       game_changed: ${{ steps.changes.outputs.game_changed }}
     steps:
@@ -55,38 +60,50 @@ jobs:
             }catch{}
           }
           appendFileSync(process.env.GITHUB_OUTPUT,`game_changed=${changed}\n`);
-          console.log(changed?'Game changes: capture and deploy.':'Documentation or release automation only: retain the live site and gallery.');
+          console.log(changed?'Game changes: build and deploy.':'Documentation or release automation only: retain the live site and gallery.');
           JS
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Build static site
-        run: node build.js
-      - name: Install screenshot browser
-        if: steps.changes.outputs.game_changed == 'true'
-        id: capture_browser
-        continue-on-error: true
-        timeout-minutes: 5
+      - name: Unit tests
+        run: npm test
+      - name: Build static site and offline HTML
         run: |
-          npm install --no-save --package-lock=false playwright@1.56.1
-          npx playwright install --with-deps chromium
-          sudo apt-get install -y fonts-noto-cjk
-      - name: Capture UI steps (no tests)
-        if: steps.capture_browser.outcome == 'success'
-        continue-on-error: true
-        timeout-minutes: 8
-        run: npm run screenshots
-      - uses: actions/upload-artifact@v4
-        if: always() && steps.changes.outputs.game_changed == 'true'
-        with:
-          name: parking-lab-step-screenshots
-          path: _site/screenshots/
-          if-no-files-found: warn
-          retention-days: 14
+          npm run build
+          npm run build:offline
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main' && steps.changes.outputs.game_changed == 'true'
         with:
           path: _site
+  visual-review:
+    name: Optional cabin snapshots
+    if: (github.event_name == 'workflow_dispatch' && inputs.visual_review) || contains(github.event.head_commit.message, '[visual-check]')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install optional screenshot browser
+        timeout-minutes: 6
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y fonts-noto-cjk
+      - name: Capture four cabin views
+        timeout-minutes: 2
+        run: |
+          npm run build
+          npm run screenshots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parking-lab-cabin-snapshots
+          path: _site/screenshots/
+          if-no-files-found: warn
+          retention-days: 14
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.build.outputs.game_changed == 'true'
     needs: build

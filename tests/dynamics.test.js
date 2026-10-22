@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {CAR,DRIVE,BAYS,scenario,step,frontWheelAngles,corners} from '../physics.js';
-import {STEERING_LOCK,STEERING_RATE} from '../steering.js';
+import {STEERING_LOCK,STEERING_RATE,STEERING_RETURN_RATE} from '../steering.js';
 const advance=(s,input,seconds,rate=120)=>{for(let i=0;i<Math.round(seconds*rate);i++)s=step(s,input,1/rate);return s;};
 const car=(gear='D',extra={})=>({...scenario().start,gear,...extra});
 test('fixed pedal has a smooth launch and linear acceleration after take-up',()=>{
@@ -38,9 +38,9 @@ test('release returns from small and large angles on both sides, even while park
   for(const gear of ['P','D','R'])for(const steer of [-1,-.2,-.005,.005,.2,1]){
     const initial=car(gear,{steer});
     assert.equal(advance(initial,{holdSteering:true},1).steer,steer);
-    const a=advance(initial,{},.02),b=advance(a,{},.02);
-    assert.ok(Math.abs(a.steer)<Math.abs(steer));
-    assert.ok(Math.abs(a.steer-b.steer)>Math.abs(steer-a.steer));
+    const a=step(initial,{},1/120);
+    assert.ok(Math.abs(Math.abs(a.steer)-Math.max(0,Math.abs(steer)-STEERING_RETURN_RATE/STEERING_LOCK/120))<1e-12);
+    assert.equal(advance(initial,{},.3).steer,0);
     let s=initial;for(let i=0;i<480;i++){const next=step(s,{},1/120);assert.ok(Math.abs(next.steer)<=Math.abs(s.steer));assert.ok(next.steer===0||Math.sign(next.steer)===Math.sign(steer));s=next;}
     assert.equal(s.steer,0);
   }
@@ -62,7 +62,8 @@ test('rack takes finite time to travel three turns and X return never snaps',()=
   assert.equal(advance(lock,{center:true},2).steer,0);
 });
 test('real dimensions, axle placement and Ackermann wheel paths share one scale',()=>{
-  assert.equal(CAR.length,4.63);assert.equal(CAR.width,1.78);assert.equal(CAR.wheelbase,2.7);
+  assert.equal(CAR.length,4.4);assert.equal(CAR.width,1.78);assert.equal(CAR.wheelbase,2.64);
+  assert.equal(CAR.front+CAR.wheelbase+CAR.rear,CAR.length);
   assert.deepEqual(BAYS.normal,{length:6,width:2.5});
   for(const side of [-1,1]){const sc=scenario('normal',side);assert.equal(sc.target.width,2.5);assert.equal(Math.abs(sc.target.x)+sc.target.width/2,Math.abs(sc.curb));}
   const points=corners({x:0,z:0,angle:0});assert.equal(Math.max(...points.map(p=>p.z))-Math.min(...points.map(p=>p.z)),CAR.length);
