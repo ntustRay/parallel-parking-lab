@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE?pathToFileURL(process.env.PLAYWRIGHT_MODULE).href:'playwright');
 const root=path.resolve('_site'),output=path.join(root,'screenshots');
 const {version}=JSON.parse(await fs.readFile('package.json','utf8'));
-const captures=[],controlReview=[];
+const captures=[],controlReview=[],aidsReview=[];
 let releaseLoading;const loadingGate=new Promise(resolve=>releaseLoading=resolve);
 await fs.mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
@@ -46,6 +46,9 @@ try{
       gear:document.querySelector('#gear-label')?.textContent,
       landmark:document.querySelector('#lesson-landmark')?.textContent,
       view:document.querySelector('[data-view].selected')?.dataset.view??null,
+      aidsExpanded:document.querySelector('#hud-toggle')?.getAttribute('aria-pressed'),
+      coachVisible:document.querySelector('#coach')?.checkVisibility(),
+      telemetryVisible:document.querySelector('#telemetry')?.checkVisibility(),
       lessonPhase:document.querySelector('#coach')?.dataset.lessonPhase??null,
       demoState:document.body.dataset.demoState??null,
       reverseCamera:document.querySelector('#rear-toggle')?.getAttribute('aria-pressed')??null,
@@ -73,7 +76,7 @@ try{
       return {regions,overlaps,coachControls:controls};
     });
     captures.push({file,title,viewport:page.viewportSize(),...state,layout});
-    const manifest={version,complete:false,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),controlReview,captures};
+    const manifest={version,complete:false,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),controlReview,aidsReview,captures};
     await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
     await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停 · 步驟截圖</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}figcaption{margin-bottom:10px}</style><h1>慢慢停 · v${version} 步驟截圖</h1><p><a href="../">開始練習</a> · <a href="manifest.json">截圖紀錄</a></p><p>建置：${manifest.commit||'本機'} · ${manifest.capturedAt}</p>${captures.map(item=>`<figure><figcaption>${item.title}（${item.viewport.width} × ${item.viewport.height}）</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);
     console.log('Screenshot:',file,title);
@@ -90,6 +93,25 @@ try{
   await capture('01-setup','設定練習');
   await page.locator('#start').click();
   await capture('02-driver','第一人稱駕駛座');
+  for(const [key,view,label] of [['2','orbit','斜俯視'],['3','top','正上方'],['4','chase','跟車']]){
+    await page.keyboard.press(key);
+    // Enter each view with teaching collapsed, then exercise the actual button.
+    if(await page.locator('#hud-toggle').getAttribute('aria-pressed')!=='true')await page.locator('#hud-toggle').click();
+    await capture('30-aids-'+view+'-open',label+'・教學展開');
+    await page.locator('#hud-toggle').click();
+    await capture('30-aids-'+view+'-closed',label+'・按鈕收起教學及車身資訊');
+    await page.keyboard.press('t');
+    await page.waitForTimeout(100);
+    const reopened=await page.evaluate(()=>({expanded:document.querySelector('#hud-toggle').getAttribute('aria-pressed'),coachVisible:document.querySelector('#coach').checkVisibility(),telemetryVisible:document.querySelector('#telemetry').checkVisibility()}));
+    await page.keyboard.press('t');
+    await page.waitForTimeout(100);
+    const closed=await page.evaluate(()=>({expanded:document.querySelector('#hud-toggle').getAttribute('aria-pressed'),coachVisible:document.querySelector('#coach').checkVisibility(),telemetryVisible:document.querySelector('#telemetry').checkVisibility()}));
+    aidsReview.push({view,reopened,closed});
+  }
+  await page.keyboard.press('2');
+  await capture('30-aids-cross-view-closed','收起後從跟車切回斜俯視，維持收合');
+  await page.keyboard.press('1');
+  await capture('30-aids-driver-closed','收起後切回第一人稱，維持收合');
   await page.locator('#hud-toggle').click();
   for(const [key,limit,heldName,releasedName,label] of [
     ['ArrowRight',100,'24-right-key-held','25-right-key-released','右'],

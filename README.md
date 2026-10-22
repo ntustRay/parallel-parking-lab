@@ -25,7 +25,11 @@
 
 ## 免伺服器試玩
 
-執行 `npm run build:offline`，產生 `dist/parking-lab-v2.0.0.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+執行 `npm run build:offline`，產生 `dist/parking-lab-v2.0.1.html`。下載／複製這一個檔案，用 Chrome 或 Edge 開啟即可；所有 3D 模組及樣式已內嵌，不依賴 localhost 或 CDN。R 檔後踩 W／↑ 倒車，S／↓／Space 煞車。
+
+## v2.0.1 教學收合修正
+
+四種視角的「教學／輔助」與 T 共用同一個開關。收起後教練與車身資訊面板一起隱藏，切換斜俯視、正上方、跟車後仍維持收合。
 
 ## v2.0.0 完整課程
 
