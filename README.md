@@ -88,7 +88,7 @@ npm run screenshots
 # 輸出 _site/screenshots/，包含圖庫與 manifest.json
 ```
 
-GitHub Actions 負責 build、操作截圖與 Pages 部署。版本更新發布在 [Releases](https://github.com/ntustRay/parallel-parking-lab/releases)，以 [CHANGELOG.md](CHANGELOG.md) 作為發佈說明來源，並附上由對應 tag 建立的離線 HTML；重跑不覆寫既有 tag 或已上傳的檔案。
+遊戲程式更新時，GitHub Actions 負責 build、操作截圖與 Pages 部署；純文件或發佈流程更新會保留線上遊戲與圖庫。版本更新發布在 [Releases](https://github.com/ntustRay/parallel-parking-lab/releases)，以 [CHANGELOG.md](CHANGELOG.md) 作為發佈說明來源，並附上由對應 tag 建立的離線 HTML；重跑不覆寫既有 tag 或已上傳的檔案。
 
 ## 程式結構
 

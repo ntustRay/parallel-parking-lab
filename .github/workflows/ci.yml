@@ -32,14 +32,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      game_changed: ${{ steps.changes.outputs.game_changed }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Check whether game files changed
+        id: changes
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          node --input-type=module <<'JS'
+          import {execFileSync} from 'node:child_process';
+          import {appendFileSync} from 'node:fs';
+          let changed=true;
+          const before=process.env.BEFORE_SHA;
+          if(before&&!/^0+$/.test(before)){
+            try{
+              const files=execFileSync('git',['diff','--name-only',before,'HEAD'],{encoding:'utf8'}).trim().split('\n').filter(Boolean);
+              changed=files.some(file=>!file.endsWith('.md')&&file!=='tools/tag-versions.mjs'&&file!=='.github/workflows/ci.yml');
+            }catch{}
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT,`game_changed=${changed}\n`);
+          console.log(changed?'Game changes: capture and deploy.':'Documentation or release automation only: retain the live site and gallery.');
+          JS
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - name: Build static site
         run: node build.js
       - name: Install screenshot browser
+        if: steps.changes.outputs.game_changed == 'true'
         id: capture_browser
         continue-on-error: true
         timeout-minutes: 5
@@ -53,18 +77,18 @@ jobs:
         timeout-minutes: 8
         run: npm run screenshots
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.changes.outputs.game_changed == 'true'
         with:
           name: parking-lab-step-screenshots
           path: _site/screenshots/
           if-no-files-found: warn
           retention-days: 14
       - uses: actions/upload-pages-artifact@v3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && steps.changes.outputs.game_changed == 'true'
         with:
           path: _site
   deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && needs.build.outputs.game_changed == 'true'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 5
