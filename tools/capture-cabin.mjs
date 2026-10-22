@@ -25,9 +25,14 @@ try{
     await page.keyboard.press('k');
     await page.waitForFunction(()=>document.querySelector('#look-label').textContent==='正前方');
     if(yaw){
-      const x=yaw<0?1000:250;
-      await page.mouse.move(x,540);await page.mouse.down();
-      await page.mouse.move(x+yaw*Math.PI/180/4.5*width,540,{steps:8});
+      // Start above the mirror overlays and the draggable steering wheel.
+      const x=yaw<0?1000:300;
+      await page.mouse.move(x,300);await page.mouse.down();
+      await page.mouse.move(x+yaw*Math.PI/180/4.5*width,300,{steps:8});
+      await page.waitForFunction(expected=>{
+        const label=document.querySelector('#look-label').textContent;
+        return label.startsWith(expected<0?'左側':'右側')&&Math.abs(Number(label.match(/\d+/)?.[0])-Math.abs(expected))<3;
+      },yaw,{timeout:5000});
     }
     await page.waitForTimeout(500);
     const png=await page.screenshot(),file=name+'.webp';
@@ -37,7 +42,8 @@ try{
       return canvas.toDataURL('image/webp',.86).split(',')[1];
     },png.toString('base64'));
     await fs.writeFile(path.join(output,file),Buffer.from(base64,'base64'));
-    captures.push({file,title,yaw,viewport:{width,height}});console.log('Cabin snapshot:',file);
+    const lookLabel=await page.locator('#look-label').textContent();
+    captures.push({file,title,yaw,lookLabel,viewport:{width,height}});console.log('Cabin snapshot:',file,lookLabel);
     if(yaw)await page.mouse.up();
   }
   const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),complete:true,captures};
