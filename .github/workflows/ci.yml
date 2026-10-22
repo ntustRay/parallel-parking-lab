@@ -93,7 +93,7 @@ jobs:
           npx playwright install --with-deps chromium
           sudo apt-get install -y fonts-noto-cjk
       - name: Capture four cabin views
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: |
           npm run build
           npm run screenshots

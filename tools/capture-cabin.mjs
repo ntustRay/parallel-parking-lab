@@ -28,7 +28,7 @@ try{
       // Start above the mirror overlays and the draggable steering wheel.
       const x=yaw<0?1000:300;
       await page.mouse.move(x,300);await page.mouse.down();
-      await page.mouse.move(x+yaw*Math.PI/180/4.5*width,300,{steps:8});
+      await page.mouse.move(x+yaw*Math.PI/180/4.5*width,300);
       await page.waitForFunction(expected=>{
         const label=document.querySelector('#look-label').textContent;
         return label.startsWith(expected<0?'左側':'右側')&&Math.abs(Number(label.match(/\d+/)?.[0])-Math.abs(expected))<3;
