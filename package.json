@@ -1,6 +1,6 @@
 {
   "name": "parallel-parking-lab",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "build": "node build.js",
     "build:offline": "node tools/build-offline.mjs",
     "start": "node server.js",
-    "screenshots": "node tools/capture-steps.mjs"
+    "screenshots": "node tools/capture-cabin.mjs",
+    "screenshots:full": "node tools/capture-steps.mjs"
   }
 }

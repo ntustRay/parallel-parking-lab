@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {drivingInput,step,scenario,result} from '../physics.js';
+import {CAR,drivingInput,step,scenario,result} from '../physics.js';
 test('W/up is gas and S/down/space brakes in every gear, including reverse',()=>{
 for(const gear of ['P','D','R']){
   for(const key of ['s','arrowdown',' ']){
@@ -24,7 +24,7 @@ const far=result(sc.start,sc,stats);
 assert.ok(near.score>far.score);assert.ok(near.score>0);assert.equal(near.passed,false);
 });
 test('practice accepts a small line margin while exam keeps strict containment',()=>{
-const sc=scenario(),s={x:3.34,z:0,angle:0,speed:0},stats={hits:0,corrections:0};
+const sc=scenario(),s={x:sc.target.x-sc.target.width/2+CAR.width/2-.06,z:0,angle:0,speed:0,gear:'P'},stats={hits:0,corrections:0};
 assert.equal(result(s,sc,stats).passed,true);assert.equal(result(s,sc,stats,{exam:true}).passed,false);
 });
 

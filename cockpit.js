@@ -1,6 +1,7 @@
 import * as THREE from './vendor/three.module.min.js';
 import {CAR} from './physics.js';
 import {STEERING_LOCK} from './steering.js';
+import {createCabinShell} from './cabin-shell.js';
 
 // Metres in the same car-local coordinate system as the exterior shell.
 // Seat/eye/rack positions are ergonomic approximations, not an Altis interior scan.
@@ -9,16 +10,16 @@ const unitBox=new THREE.BoxGeometry(1,1,1);
 const mats=new Map();
 let grain;
 function leatherGrain(){if(grain)return grain;const canvas=document.createElement('canvas');canvas.width=canvas.height=128;const c=canvas.getContext('2d'),pixels=c.createImageData(128,128);let seed=3217;for(let i=0;i<pixels.data.length;i+=4){seed=(seed*1664525+1013904223)>>>0;const v=150+seed%70;pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=v;pixels.data[i+3]=255;}c.putImageData(pixels,0,0);grain=new THREE.CanvasTexture(canvas);grain.wrapS=grain.wrapT=THREE.RepeatWrapping;grain.repeat.set(6,6);return grain;}
-function mat(color,metalness=0){const key=color+metalness;if(!mats.has(key)){const leather=['#171d23','#242b31','#363a3d','#555e65','#30373c','#34383c','#35434f'].includes(color);mats.set(key,new THREE.MeshStandardMaterial({color,roughness:metalness?.38:.88,metalness,...(leather?{bumpMap:leatherGrain(),bumpScale:.0008}:{})}));}return mats.get(key);}
+function mat(color,metalness=0){const key=color+metalness;if(!mats.has(key)){const leather=['#171d23','#242b31','#363a3d','#555e65','#30373c','#343d44','#363e44','#35434f'].includes(color);mats.set(key,new THREE.MeshStandardMaterial({color,roughness:metalness?.38:.88,metalness,...(leather?{bumpMap:leatherGrain(),bumpScale:.0008}:{})}));}return mats.get(key);}
 function box(parent,color,x,y,z,w,h,d,metalness=0){const mesh=new THREE.Mesh(unitBox,mat(color,metalness));mesh.position.set(x,y,z);mesh.scale.set(w,h,d);parent.add(mesh);return mesh;}
 function softBox(parent,color,x,y,z,w,h,d,r=.025){const g=new THREE.BoxGeometry(w,h,d,10,5,8),p=g.attributes.position,v=new THREE.Vector3(),center=new THREE.Vector3();for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);center.set(THREE.MathUtils.clamp(v.x,-w/2+r,w/2-r),THREE.MathUtils.clamp(v.y,-h/2+r,h/2-r),THREE.MathUtils.clamp(v.z,-d/2+r,d/2-r));v.sub(center).normalize().multiplyScalar(r).add(center);p.setXYZ(i,v.x,v.y,v.z);}g.computeVertexNormals();const mesh=new THREE.Mesh(g,mat(color));mesh.position.set(x,y,z);parent.add(mesh);return mesh;}
 function surface(parent,points,color){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(points.flat(),3));g.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,1,0,0,0],2));g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();const m=mat(color).clone();m.side=THREE.DoubleSide;const mesh=new THREE.Mesh(g,m);parent.add(mesh);return mesh;}
-function beam(parent,a,b,width,depth,color){const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),delta=end.clone().sub(start);const mesh=box(parent,color,0,0,0,width,delta.length(),depth);mesh.position.copy(start.add(end).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());return mesh;}
 function display(parent,x,y,z,w,h,width,height){const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:texture,toneMapped:false}));mesh.position.set(x,y,z);parent.add(mesh);return {canvas,texture,mesh,ctx:canvas.getContext('2d')};}
 
 export function createCockpit(){
   const group=new THREE.Group();group.name='driver-cabin';
-  const half=CAR.width/2-.115,roof=CAR.height-.08;
+  const half=CAR.width/2-.115;
+  group.add(createCabinShell(mat));
   const mirrorFaces={};
   for(const sign of [-1,1]){
     const x=sign*.984;
@@ -34,21 +35,12 @@ export function createCockpit(){
     surface(group,[[left,.89,-.39],[right,.89,-.39],[right,.53,-.32],[left,.53,-.32]],'#23292d');
   }
   surface(group,[[-.70,.72,-.35],[-.08,.72,-.35],[-.08,.53,-.32],[-.70,.53,-.32]],'#23292d');
+  // Close the driver's instrument recess and the dashboard end caps.
+  surface(group,[[-.70,.80,-.655],[-.08,.80,-.655],[-.08,.72,-.35],[-.70,.72,-.35]],'#23292d');
+  for(const side of [-1,1])surface(group,[[side*half,.94,-1.02],[side*half,.89,-.39],[side*half,.53,-.32],[side*half,.53,-1.02]],'#23292d');
   softBox(group,'#30373c',.35,.74,-.64,.81,.28,.7,.04);
   box(group,'#161d22',0,.48,-.62,half*2,.16,.72);
   box(group,'#6e777b',0,.815,-.381,half*2,.015,.016,.55);
-  box(group,'#242b30',0,.32,.12,half*2,.045,1.8);
-  box(group,'#303438',0,roof+.04,.22,half*2,.08,1.65);
-  for(const sign of [-1,1]){
-    beam(group,[sign*half,.87,-.92],[sign*(half-.1),roof,-.42],.115,.105,'#555e65');
-    beam(group,[sign*(half+.026),.865,-.94],[sign*(half-.07),roof,-.43],.035,.125,'#171f24');
-    beam(group,[sign*.78,.91,.72],[sign*.635,CAR.height-.065,.36],.045,.055,'#555e65');
-    box(group,'#2b3135',sign*(half+.018),.65,.02,.09,.43,1.57);
-    box(group,'#41464a',sign*(half-.015),.886,.02,.095,.055,1.58);
-    box(group,'#171d22',sign*(half-.055),.71,-.28,.03,.12,.32);
-    box(group,'#aab4b8',sign*(half-.076),.74,-.28,.019,.025,.21,.7);
-    const visor=softBox(group,'#34383c',sign*.36,roof+.025,-.38,.55,.045,.17,.015);visor.rotation.x=-.1;
-  }
   // Binnacle, physical vent slats, and a separate passenger-side parking display.
   const hood=new THREE.Shape();hood.moveTo(-.285,.80);hood.lineTo(-.285,.88);hood.quadraticCurveTo(-.26,.982,0,.991);hood.quadraticCurveTo(.26,.982,.285,.88);hood.lineTo(.285,.80);hood.closePath();
   const hoodMesh=new THREE.Mesh(new THREE.ExtrudeGeometry(hood,{depth:.16,bevelEnabled:true,bevelSize:.012,bevelThickness:.012,bevelSegments:3,curveSegments:24}),mat('#171d23'));hoodMesh.position.set(-.4,0,-.82);group.add(hoodMesh);
