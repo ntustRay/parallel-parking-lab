@@ -25,6 +25,10 @@
 
 在瀏覽器 Console 讀取 window.parkingDiagnostics，可取得 frames、worldUpdates、views、calls、triangles 與 cpuFrameMs。cpuFrameMs 是 CPU 提交繪圖的時間，不能當成 GPU 執行時間或實測 FPS。
 
+## 幾何成本
+
+與 v2.0.2 的製作結果比較，單一車艙由 160 個 mesh 降為 64 個（含儀表與兩面動態鏡面）；單一車外由 53 個降為 27 個（含接地陰影）。新增座椅與門板細節後，車艙約 28,244 triangles，仍在 35,000 預算內。這些是模型網格數，不等於整場景 draw calls 或實測 FPS。
+
 ## 模型資源的所有權
 
 車輛共用 GLB geometry；每台車擁有自己的車漆與動態車燈 material。移除障礙物只釋放該車私有的 material 與接地陰影 geometry，避免把其他車仍在使用的網格一起 dispose。

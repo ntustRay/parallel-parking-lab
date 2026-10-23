@@ -40,6 +40,13 @@ test('each vehicle owns paint and lights while sharing immutable mesh geometry',
   assert.equal(a.userData.lights.length, 2);
   assert.equal(a.userData.reverseLights.length, 2);
   assert.equal(a.userData.indicators.length, 4);
+  const paintedA=[],paintedB=[];
+  a.traverse(item=>{if(item.isMesh&&item.material.name==='body-paint')paintedA.push(item);});
+  b.traverse(item=>{if(item.isMesh&&item.material.name==='body-paint')paintedB.push(item);});
+  assert.ok(paintedA.length>0);
+  assert.equal(paintedA[0].material.color.getHexString(),'326576');
+  assert.equal(paintedB[0].material.color.getHexString(),'9b7d61');
+  assert.notEqual(paintedA[0].material,paintedB[0].material);
   const wheel = a.userData.frontWheels[0];
   assert.ok(Math.abs(Math.abs(wheel.position.x) - CAR.track / 2) < 0.0001);
   assert.equal(

@@ -37,6 +37,7 @@ for (const { file, source } of modules) {
     content = content.replace("'./assets/'", "'./assets/" + hash + "/'");
   await fs.writeFile(destination, content, 'utf8');
 }
+await fs.copyFile('vendor/THREE-LICENSE.txt',path.join(output,'vendor/THREE-LICENSE.txt'));
 await fs.mkdir(path.join(output, 'assets', hash), { recursive: true });
 for (const { file, data } of assets)
   await fs.writeFile(path.join(output, 'assets', hash, file), data);
