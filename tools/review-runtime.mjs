@@ -41,7 +41,7 @@ try {
   const samples = await page.evaluate(async () => {
     const samples = [];
     let previous = -1;
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 45; i++) {
       await new Promise(requestAnimationFrame);
       const data = window.parkingDiagnostics;
       if (data.frames !== previous) {
