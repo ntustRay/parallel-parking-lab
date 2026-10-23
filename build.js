@@ -1,13 +1,61 @@
-import fs from 'node:fs';import path from 'node:path';import {createHash} from 'node:crypto';
-const modules=['bootstrap.js','audio.js','shortcuts.js','physics.js','courses.js','lessons.js','training.js','steering.js','view.js','scene.js','cabin-shell.js','cockpit.js','renderer.js','game.js'];
-const sources=Object.fromEntries([...modules,'style.css','index.html'].map(f=>[f,fs.readFileSync(f,'utf8')]));
-const hash=createHash('sha256').update(JSON.stringify(sources)).update(fs.readFileSync('vendor/three.module.min.js')).update(fs.readFileSync('vendor/three.core.min.js')).digest('hex').slice(0,12);
-const output=path.resolve('_site');fs.mkdirSync(output,{recursive:true});
-const hashed=f=>f.replace(/(\.[^.]+)$/,`.${hash}$1`);
-for(const f of modules){const content=sources[f].replace(/from\s+(['"])\.\/([^'"]+\.js)\1/g,(_,q,file)=>`from ${q}./${file.startsWith('vendor/')?'vendor/'+hash+'/'+file.slice(7):hashed(file)}${q}`).replace(/import\((['"])\.\/([^'"]+\.js)\1\)/g,(_,q,file)=>`import(${q}./${hashed(file)}${q})`);fs.writeFileSync(path.join(output,hashed(f)),content,'utf8');}
-fs.cpSync('vendor',path.join(output,'vendor',hash),{recursive:true});
-fs.writeFileSync(path.join(output,hashed('style.css')),sources['style.css'],'utf8');
-fs.writeFileSync(path.join(output,'index.html'),sources['index.html'].replace('href="style.css"',`href="${hashed('style.css')}"`).replace('src="bootstrap.js"',`src="${hashed('bootstrap.js')}"`),'utf8');
-// Reviewed stills are static documentation, never a prerequisite for deployment.
-if(fs.existsSync('docs/screenshots'))fs.cpSync('docs/screenshots',path.join(output,'screenshots'),{recursive:true});
-console.log(`Static build: _site/ (${hash})`);
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { collectModules, rewriteImports } from './tools/modules.mjs';
+
+const root = process.cwd(),
+  output = path.resolve(root, '_site');
+if (path.dirname(output) !== root)
+  throw Error('Build output must be inside the project');
+const modules = await collectModules(['bootstrap.js']);
+const css = await fs.readFile('style.css', 'utf8'),
+  html = await fs.readFile('index.html', 'utf8');
+const assets = await Promise.all(
+  ['sedan-cabin.glb', 'sedan-exterior.glb'].map(async (file) => ({
+    file,
+    data: await fs.readFile('assets/' + file),
+  })),
+);
+const digest = createHash('sha256').update(css).update(html);
+for (const { file, source } of modules) digest.update(file).update(source);
+for (const { data } of assets) digest.update(data);
+const hash = digest.digest('hex').slice(0, 12);
+const hashed = (file) => file.replace(/(\.[^./]+)$/, '.' + hash + '$1');
+await fs.rm(output, { recursive: true, force: true });
+await fs.mkdir(output, { recursive: true });
+for (const { file, source } of modules) {
+  const destination = path.join(output, hashed(file));
+  await fs.mkdir(path.dirname(destination), { recursive: true });
+  let content = rewriteImports(source, file, (target) => {
+    const relative = path.posix.relative(
+      path.posix.dirname(file),
+      hashed(target),
+    );
+    return relative.startsWith('.') ? relative : './' + relative;
+  });
+  if (file === 'model-assets.js')
+    content = content.replace("'./assets/'", "'./assets/" + hash + "/'");
+  await fs.writeFile(destination, content, 'utf8');
+}
+await fs.copyFile('vendor/THREE-LICENSE.txt',path.join(output,'vendor/THREE-LICENSE.txt'));
+await fs.mkdir(path.join(output, 'assets', hash), { recursive: true });
+for (const { file, data } of assets)
+  await fs.writeFile(path.join(output, 'assets', hash, file), data);
+await fs.writeFile(path.join(output, hashed('style.css')), css, 'utf8');
+await fs.writeFile(
+  path.join(output, 'index.html'),
+  html
+    .replace('href="style.css"', 'href="' + hashed('style.css') + '"')
+    .replace('src="bootstrap.js"', 'src="' + hashed('bootstrap.js') + '"'),
+  'utf8',
+);
+try {
+  await fs.cp('docs/screenshots', path.join(output, 'screenshots'), {
+    recursive: true,
+  });
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error;
+}
+console.log(
+  'Static build: _site/ (' + hash + ', ' + modules.length + ' modules, 2 GLBs)',
+);

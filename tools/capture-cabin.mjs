@@ -7,9 +7,9 @@ const {version}=JSON.parse(await fs.readFile('package.json','utf8'));
 await fs.mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE?{executablePath:process.env.CHROMIUM_EXECUTABLE}:{})});
 try{
-  const width=1440,height=960;
+  const width=1440,height=960,errors=[];
   const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:1}),converter=await browser.newPage();
-  page.on('pageerror',error=>{throw error;});
+  page.on('pageerror',error=>errors.push(error.message));
   await page.route('http://127.0.0.1:4173/**',async route=>{
     const url=new URL(route.request().url()),file=path.resolve(root,'.'+decodeURIComponent(url.pathname==='/'?'/index.html':url.pathname));
     if(!file.startsWith(root+path.sep))return route.fulfill({status:403,body:'Forbidden'});
@@ -46,6 +46,7 @@ try{
     captures.push({file,title,yaw,lookLabel,viewport:{width,height}});console.log('Cabin snapshot:',file,lookLabel);
     if(yaw)await page.mouse.up();
   }
+  if(errors.length)throw new Error(errors.join("; "));
   const manifest={version,commit:process.env.GITHUB_SHA||null,capturedAt:new Date().toISOString(),complete:true,captures};
   await fs.writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
   await fs.writeFile(path.join(output,'index.html'),`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>慢慢停・車內畫面</title><style>body{max-width:1100px;margin:32px auto;padding:0 20px;font:16px/1.6 system-ui;background:#14212a;color:#eef5f6}a{color:#a9ddd3}img{display:block;max-width:100%;height:auto;border-radius:8px}figure{margin:32px 0}</style><h1>慢慢停・v${version} 車內畫面</h1><p><a href="../">開始練習</a> · <a href="manifest.json">擷取紀錄</a></p>${captures.map(item=>`<figure><figcaption>${item.title}</figcaption><a href="${item.file}"><img src="${item.file}" alt="${item.title}" loading="lazy"></a></figure>`).join('')}</html>`);

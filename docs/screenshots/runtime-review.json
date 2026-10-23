@@ -1,0 +1,20 @@
+{
+  "version": "2.1.0",
+  "viewport": {
+    "width": 1440,
+    "height": 960
+  },
+  "renderer": "CI Chromium; CPU submission time, not GPU frame time",
+  "samples": 22,
+  "worldUpdatesPerFrame": 1,
+  "viewsPerFrame": 4,
+  "medianCpuMs": 32.60000000000582,
+  "p95CpuMs": 39.89999999999418,
+  "maxCalls": 1358,
+  "maxTriangles": 548752,
+  "offline": {
+    "externalRequests": 0,
+    "booted": true
+  },
+  "errors": []
+}

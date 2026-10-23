@@ -1,0 +1,14 @@
+{
+  "cabin": {
+    "bytes": 1011368,
+    "meshes": 61,
+    "staticMaterials": 45,
+    "triangles": 28238
+  },
+  "exterior": {
+    "bytes": 317964,
+    "meshes": 26,
+    "staticMaterials": 6,
+    "triangles": 5736
+  }
+}

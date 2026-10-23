@@ -1,8 +1,8 @@
 {
-  "version": "2.0.2",
-  "commit": "2225531e4988a3b941df8b64a4d3baf8b8723b91",
-  "appBuild": "ac1e853ecf29",
-  "capturedAt": "2026-10-22T14:40:44Z",
+  "version": "2.1.0",
+  "commit": "b3e2768c9911d43db8acb0dcbd89db2d829dac5a",
+  "capturedAt": "2026-10-23T05:46:47.763Z",
+  "complete": true,
   "captures": [
     {
       "file": "02-driver.webp",
@@ -29,6 +29,16 @@
       "title": "右側・副駕座與門板",
       "yaw": 90,
       "lookLabel": "右側 90°",
+      "viewport": {
+        "width": 1440,
+        "height": 960
+      }
+    },
+    {
+      "file": "cabin-rear.webp",
+      "title": "回頭・後座與後窗",
+      "yaw": 145,
+      "lookLabel": "右側 145°",
       "viewport": {
         "width": 1440,
         "height": 960

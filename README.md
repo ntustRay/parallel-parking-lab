@@ -84,7 +84,7 @@ npm run build
 npm test
 ```
 
-涵蓋車輛動態、轉向與快速回正、碰撞與入位評分、五項課程的左右物理示範，以及第一人稱門板／底板遮蔽、窗戶開口與轉頭近裁切。
+涵蓋車輛動態、轉向與快速回正、碰撞與入位評分、五項課程的左右物理示範，以及實際 GLB 的門板／底板遮蔽、窗戶開口、轉頭近裁切、模型節點與資源隔離。
 
 需要目視核對時，才安裝擷取用瀏覽器：
 
@@ -97,22 +97,26 @@ npm run screenshots
 # npm run screenshots:full 可手動擷取完整操作流程
 ```
 
-GitHub Actions 預設執行 unit tests、靜態／離線建置與 Pages 部署，不安裝瀏覽器或跑 E2E。需要截圖時，可手動執行 workflow 並勾選 `visual_review`，或在提交訊息加上 `[visual-check]`，額外擷取四張車內圖；這個獨立工作不影響正常部署。已核對的圖庫存於 `docs/screenshots/`，隨網站建置保留。
+GitHub Actions 預設執行 unit tests、靜態／離線建置與 Pages 部署，不安裝瀏覽器或跑 E2E。需要截圖時，可手動執行 workflow 並勾選 `visual_review`，或在提交訊息加上 `[visual-check]`，額外擷取四張車內圖，並驗證各視角、課程切換與離線版零外部請求；這個獨立工作不影響正常部署。已核對的圖庫存於 `docs/screenshots/`，隨網站建置保留。
 
 純文件或發佈流程更新會保留線上遊戲與圖庫。版本更新發布在 [Releases](https://github.com/ntustRay/parallel-parking-lab/releases)，以 [CHANGELOG.md](CHANGELOG.md) 作為發佈說明來源，並附上由對應 tag 建立的離線 HTML；重跑不覆寫既有 tag 或已上傳的檔案。
 
 ## 程式結構
 
-| 檔案 | 責任 |
+| 模組 | 責任 |
 | --- | --- |
-| `physics.js`、`courses.js` | 車輛模型、課程配置、碰撞、路線進度與評分 |
-| `training.js`、`lessons.js` | 示範路線、四階段教學與觀察點 |
-| `scene.js`、`renderer.js`、`cockpit.js`、`cabin-shell.js` | 3D 場景、完整車內模型、後視鏡與 GPU 合成 |
-| `game.js`、`steering.js` | 模擬迴圈、操作與介面狀態 |
-| `audio.js`、`shortcuts.js` | 音樂音效與快捷鍵 |
-| `tools/` | 靜態／離線產物、操作截圖及版本發佈 |
+| `vehicle-spec.js`、`physics.js`、`courses.js`、`simulation.js` | 共用尺寸、車輛動態、碰撞、課程進度與評分 |
+| `assets/*.glb`、`model-assets.js` | 可替換的車內／車外模型與載入檢查 |
+| `cockpit.js`、`vehicle-view.js` | 動態儀表、鏡面、方向盤、輪軸與車燈 |
+| `scene.js`、`renderer.js`、`camera-rig.js`、`render-layout.js` | 程序生成場地、單一渲染系統、相機與畫面配置 |
+| `game.js`、`steering.js`、`training.js`、`lessons.js` | 操作、固定步長協調、示範與教學 |
+| `models/`、`cabin-shell.js`、`tools/` | 模型製作來源、GLB 建置、離線打包、截圖與發佈 |
 
-場景採用公尺尺度的緊湊房車與低速車輛近似模型，適合練習觀察與操作順序；車內視線尚未經實車標定。迴轉課程使用封閉訓練場景。
+場景每幀更新一次，再供主畫面與鏡面使用。車內外採 GLB，地面、車位與路線保留程序生成；可以替換造型而不修改操作、碰撞與評分。
+
+模型製作來源可用 `npm run build:models` 重新匯出；直接替換 GLB 時，依 [模型介面](assets/README.md) 保留尺寸與必要節點。詳見 [車模與渲染架構](docs/model-architecture.md)。
+
+場景採公尺尺度的緊湊房車與低速車輛近似模型，適合練習觀察與操作順序；車內視線尚未經實車標定。迴轉課程使用封閉訓練場景。
 
 ## 授權
 

@@ -1,7 +1,8 @@
 import {advanceSteering} from './steering.js';
 // Metres, seconds, radians. A compact practice sedan, not a measured car model.
 // Body, wheelbase, overhangs, collision and demonstrations share this geometry.
-export const CAR=Object.freeze({length:4.4,width:1.78,height:1.435,wheelbase:2.64,front:.84,rear:.92,track:1.53,maxSteer:35*Math.PI/180});
+import {CAR} from './vehicle-spec.js';
+export {CAR} from './vehicle-spec.js';
 export const DRIVE=Object.freeze({creepForward:.65,creepReverse:.5,precisionCreep:.4,creepAcceleration:.28,creepJerk:.45,precisionLimit:.8,forwardLimit:30/3.6,reverseLimit:12/3.6,forwardAcceleration:1.8,reverseAcceleration:1.2,jerk:2.5,brakeDeceleration:6});
 // Two 3.25 m lanes, with a 2.6 m practice parking strip on each side.
 export const ROAD=Object.freeze({laneWidth:3.25,parkingWidth:2.6,curb:5,oppositeCurb:-6.7,divider:-.85,curbHeight:.15,sidewalkWidth:3.5});
