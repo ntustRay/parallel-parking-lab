@@ -90,7 +90,12 @@ jobs:
         timeout-minutes: 6
         run: |
           npm install --no-save --package-lock=false playwright@1.56.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
+          mkdir -p "$HOME/.local/share/fonts"
+          curl --fail --location --retry 2 --connect-timeout 10 --max-time 30 \
+            https://raw.githubusercontent.com/google/fonts/e7db6ca603fd4862010383ff17ffd6cc4ffac1c0/ofl/notosanstc/NotoSansTC%5Bwght%5D.ttf \
+            --output "$HOME/.local/share/fonts/NotoSansTC.ttf"
+          fc-cache -f "$HOME/.local/share/fonts"
       - name: Capture four cabin views and verify offline runtime
         timeout-minutes: 3
         run: |
