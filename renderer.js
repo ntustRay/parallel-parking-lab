@@ -1,24 +1,58 @@
-import {THREE,createWorld,updateWorld} from './scene.js';
-import {CAR,corners} from './physics.js';
-import {CABIN,createCockpit,updateCockpit} from './cockpit.js';
+import { THREE, createWorld, updateWorld } from './scene.js';
+import { CABIN } from './vehicle-spec.js';
+import { CameraRig } from './camera-rig.js';
+import { overviewLayout, positionWheel } from './render-layout.js';
+import { loadVehicleAssets } from './model-assets.js';
+import { createCockpit, updateCockpit } from './cockpit.js';
 
-let shared;
-function engine(canvas){
+function engine(canvas, assets) {
   let renderer;
-  try{renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});}
-  catch(error){
-    if(window.parkingBoot){window.parkingBoot.fail('瀏覽器無法啟動 3D 圖形。請開啟圖形加速，或改用支援 WebGL 2 的瀏覽器。');throw error;}
+  try {
+    renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
+  } catch (error) {
+    if (window.parkingBoot) {
+      window.parkingBoot.fail(
+        '瀏覽器無法啟動 3D 圖形。請開啟圖形加速，或改用支援 WebGL 2 的瀏覽器。',
+      );
+      throw error;
+    }
     document.body.classList.add('startup-failed');
-    const notice=document.createElement('main');notice.id='startup-error';
-    notice.innerHTML='<span class="startup-mark" aria-hidden="true">P</span><h1>3D 場景未能啟動</h1><p>瀏覽器目前無法使用 WebGL 2。請檢查圖形加速設定，或改用支援 WebGL 2 的瀏覽器後再試。</p><button type="button">重新整理</button>';
-    notice.querySelector('button').onclick=()=>location.reload();document.body.append(notice);notice.querySelector('button').focus();
+    const notice = document.createElement('main');
+    notice.id = 'startup-error';
+    notice.innerHTML =
+      '<span class="startup-mark" aria-hidden="true">P</span><h1>3D 場景未能啟動</h1><p>瀏覽器目前無法使用 WebGL 2。請檢查圖形加速設定，或改用支援 WebGL 2 的瀏覽器後再試。</p><button type="button">重新整理</button>';
+    notice.querySelector('button').onclick = () => location.reload();
+    document.body.append(notice);
+    notice.querySelector('button').focus();
     throw error;
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));renderer.setSize(innerWidth,innerHeight,false);
-  renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
-  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.shadowMap.autoUpdate=false;renderer.autoClear=false;
-  const overlay=new THREE.Scene(),overlayCamera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);
-  const overlayMaterial=new THREE.ShaderMaterial({depthTest:false,depthWrite:false,transparent:true,uniforms:{image:{value:null},size:{value:new THREE.Vector2(1,1)},radius:{value:18}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',fragmentShader:`
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.autoClear = false;
+  const overlay = new THREE.Scene(),
+    overlayCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const overlayMaterial = new THREE.ShaderMaterial({
+    depthTest: false,
+    depthWrite: false,
+    transparent: true,
+    uniforms: {
+      image: { value: null },
+      size: { value: new THREE.Vector2(1, 1) },
+      radius: { value: 18 },
+    },
+    vertexShader:
+      'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}',
+    fragmentShader: `
     uniform sampler2D image;uniform vec2 size;uniform float radius;varying vec2 vUv;
     void main(){
       vec2 p=abs((vUv-.5)*size)-(size*.5-radius);float edge=length(max(p,0.))+min(max(p.x,p.y),0.)-radius;
@@ -26,99 +60,200 @@ function engine(canvas){
       gl_FragColor=texture2D(image,vec2(1.-vUv.x,vUv.y));
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
-    }`});
-  overlay.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),overlayMaterial));
-  const state=createWorld();state.cabin=createCockpit();state.world.add(state.cabin);
-  return {renderer,...state,pixelRatio:Math.min(devicePixelRatio||1,1.5),slowFrames:0,lastShadow:0,panes:[],overlay,overlayCamera,overlayMaterial};
+    }`,
+  });
+  overlay.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), overlayMaterial));
+  const state = createWorld(assets);
+  state.cabin = createCockpit(assets.cabin);
+  state.world.add(state.cabin);
+  return {
+    renderer,
+    ...state,
+    pixelRatio: Math.min(devicePixelRatio || 1, 1.5),
+    slowFrames: 0,
+    lastShadow: 0,
+    panes: [],
+    overlay,
+    overlayCamera,
+    overlayMaterial,
+  };
 }
 
 // One WebGL context renders the windshield and mirror textures. GPU composition
 // avoids synchronous canvas readbacks, even with large or enlarged mirrors.
-export class Renderer{
-  constructor(canvas){
-    this.canvas=canvas;this.main=canvas.id==='world';this.view='driver';this.lookYaw=0;this.lookPitch=0;this.fov=80;this.mirrorTilt=-14;
-    if(this.main)shared=engine(canvas);else{this.target=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:true,samples:2});shared.panes.push(this);const side=canvas.id==='mirror-left'?'left':canvas.id==='mirror-right'?'right':null;if(side)shared.cabin.userData.mirrorFaces[side].material.uniforms.image.value=this.target.texture;}
-    this.perspectiveCamera=new THREE.PerspectiveCamera(45,1,.06,200);this.topCamera=new THREE.OrthographicCamera(-16,16,12,-12,.06,200);this.camera=this.perspectiveCamera;this.resize();window.addEventListener('resize',()=>this.resize());
+export class Renderer {
+  constructor(canvas, system) {
+    this.system = system;
+    this.canvas = canvas;
+    this.main = canvas.id === 'world';
+    this.view = 'driver';
+    this.lookYaw = 0;
+    this.lookPitch = 0;
+    this.fov = 80;
+    this.mirrorTilt = -14;
+    if (!this.main) {
+      this.target = new THREE.WebGLRenderTarget(1, 1, {
+        type: THREE.HalfFloatType,
+        depthBuffer: true,
+        samples: 2,
+      });
+      this.system.panes.push(this);
+      const side =
+        canvas.id === 'mirror-left'
+          ? 'left'
+          : canvas.id === 'mirror-right'
+            ? 'right'
+            : null;
+      if (side)
+        this.system.cabin.userData.mirrorFaces[
+          side
+        ].material.uniforms.image.value = this.target.texture;
+    }
+    this.rig = new CameraRig();
+    this.camera = this.rig.perspectiveCamera;
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
   }
-  resize(){
-    this.w=this.canvas.clientWidth||innerWidth;this.h=this.canvas.clientHeight||innerHeight;this.dpr=shared.pixelRatio;
-    if(this.main){shared.renderer.setPixelRatio(this.dpr);shared.renderer.setSize(this.w,this.h,false);}else this.target.setSize(Math.round(this.w*this.dpr),Math.round(this.h*this.dpr));
+  resize() {
+    this.w = this.canvas.clientWidth || innerWidth;
+    this.h = this.canvas.clientHeight || innerHeight;
+    this.dpr = this.system.pixelRatio;
+    if (this.main) {
+      this.system.renderer.setPixelRatio(this.dpr);
+      this.system.renderer.setSize(this.w, this.h, false);
+    } else
+      this.target.setSize(
+        Math.round(this.w * this.dpr),
+        Math.round(this.h * this.dpr),
+      );
   }
-  adaptQuality(dt){
+  adaptQuality(dt) {
     // Keep the mirrors large in CSS; reduce GPU work on slower devices instead.
-    shared.slowFrames=dt>.12?shared.slowFrames+1:Math.max(0,shared.slowFrames-1);
-    if(shared.slowFrames<3||shared.pixelRatio<=.7)return;
-    shared.slowFrames=0;shared.pixelRatio=Math.max(.7,shared.pixelRatio*.8);
-    for(const pane of shared.panes){pane.target.samples=0;pane.resize();}
-    if(shared.sun.shadow.mapSize.x>1024){shared.sun.shadow.mapSize.set(1024,1024);shared.sun.shadow.map?.dispose();shared.sun.shadow.map=null;shared.renderer.shadowMap.needsUpdate=true;}
+    this.system.slowFrames =
+      dt > 0.12
+        ? this.system.slowFrames + 1
+        : Math.max(0, this.system.slowFrames - 1);
+    if (this.system.slowFrames < 3 || this.system.pixelRatio <= 0.7) return;
+    this.system.slowFrames = 0;
+    this.system.pixelRatio = Math.max(0.7, this.system.pixelRatio * 0.8);
+    for (const pane of this.system.panes) {
+      pane.target.samples = 0;
+      pane.resize();
+    }
+    if (this.system.sun.shadow.mapSize.x > 1024) {
+      this.system.sun.shadow.mapSize.set(1024, 1024);
+      this.system.sun.shadow.map?.dispose();
+      this.system.sun.shadow.map = null;
+      this.system.renderer.shadowMap.needsUpdate = true;
+    }
     this.resize();
   }
-  pointCamera(car){
-    const p=new THREE.Vector3(car.x,0,-car.z),f=new THREE.Vector3(Math.sin(car.angle),0,-Math.cos(car.angle)),r=new THREE.Vector3(Math.cos(car.angle),0,Math.sin(car.angle));
-    this.camera=this.view==='top'?this.topCamera:this.perspectiveCamera;
-    let eye,target;this.camera.up.set(0,1,0);const aspect=this.w/this.h;let horizontalFov=65;
-    if(this.view==='mirror-left'||this.view==='mirror-right'){
-      const sign=this.view==='mirror-left'?-1:1;
-      eye=p.clone().addScaledVector(r,sign*(CAR.width/2+.13)).addScaledVector(f,CABIN.mirrorForward);eye.y=CABIN.mirrorHeight;
-      target=eye.clone().addScaledVector(f,-12).addScaledVector(r,sign*3.5);target.y+=Math.tan(this.mirrorTilt*Math.PI/180)*12;horizontalFov=64;
-    }else if(this.view==='rear'){
-      eye=p.clone().addScaledVector(f,-.6);eye.y=1.3;target=eye.clone().addScaledVector(f,-18);target.y=.4;horizontalFov=72;
-    }else if(this.view==='driver'){
-      eye=p.clone().addScaledVector(r,CABIN.eyeX).addScaledVector(f,CABIN.eyeForward);eye.y=CABIN.eyeHeight;
-      const yaw=car.angle+this.lookYaw,pitch=CABIN.pitch+this.lookPitch;target=eye.clone().add(new THREE.Vector3(Math.sin(yaw)*18,Math.tan(pitch)*18,-Math.cos(yaw)*18));horizontalFov=this.fov;
-    }else if(this.view==='top'){
-      const scene=shared.scenario;
-      const points=(scene.overviewPoints||[]).concat(scene.parkingBays.flatMap(bay=>corners(bay,{length:bay.length,width:bay.width})).concat(corners(scene.start)));
-      const minZ=Math.min(...points.map(v=>v.z)),maxZ=Math.max(...points.map(v=>v.z));
-      const centerX=(Math.min(...points.map(v=>v.x))+Math.max(...points.map(v=>v.x)))/2,centerZ=(minZ+maxZ)/2;
-      const mirrorBottom=Math.max(...[...document.querySelectorAll('.mirror:not(.expanded)')].map(el=>el.getBoundingClientRect().bottom));
-      const upper=mirrorBottom+14,lower=document.querySelector('footer').getBoundingClientRect().top-14;
-      const usable=Math.max(this.h*.25,lower-upper),halfHeight=Math.max((maxZ-minZ+1.2)/2*this.h/usable,(Math.max(...points.map(v=>v.x))-Math.min(...points.map(v=>v.x))+2)/2/aspect,9/aspect);
-      const offset=((upper+lower)/2-this.h/2)*2*halfHeight/this.h;
-      this.camera.left=-halfHeight*aspect;this.camera.right=halfHeight*aspect;this.camera.top=halfHeight+offset;this.camera.bottom=-halfHeight+offset;
-      eye=new THREE.Vector3(centerX,31,-centerZ+.001);target=new THREE.Vector3(centerX,0,-centerZ);this.camera.up.set(0,0,-1);horizontalFov=65;
-    }else if(this.view==='chase'){
-      eye=p.clone().addScaledVector(f,-10);eye.y=6.5;target=p.clone().addScaledVector(f,3);horizontalFov=70;
-    }else{
-      const points=shared.scenario.overviewPoints;
-      if(points){
-        const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x)),minZ=Math.min(...points.map(p=>p.z)),maxZ=Math.max(...points.map(p=>p.z)),size=Math.max(maxZ-minZ,maxX-minX);
-        target=new THREE.Vector3((minX+maxX)/2,0,-(minZ+maxZ)/2);eye=target.clone().add(new THREE.Vector3(-size*.65,Math.max(24,size),size*.65));
-      }else{eye=new THREE.Vector3(-15*(shared.side||1),19,19);target=new THREE.Vector3(shared.side||1,0,-.5);}horizontalFov=70;
-    }
-    this.camera.aspect=aspect;this.camera.fov=Math.min(this.view==='driver'?90:150,THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(horizontalFov)/2)/aspect)));
-    this.camera.position.copy(eye);this.camera.lookAt(target);this.camera.updateProjectionMatrix();
-    this.camera.updateMatrixWorld();
-    if(this.main&&this.view==='driver'){
-      const local=new THREE.Vector3(CABIN.wheelX,CABIN.wheelY,CABIN.wheelZ).applyAxisAngle(new THREE.Vector3(0,1,0),-car.angle).add(p);
-      const top=local.clone().add(new THREE.Vector3(0,CABIN.wheelRadius,0)),bottom=local.clone().add(new THREE.Vector3(0,-CABIN.wheelRadius,0));
-      const center=local.project(this.camera),a=top.project(this.camera),b=bottom.project(this.camera);
-      const size=Math.abs(a.y-b.y)*this.h/2;
-      document.body.style.setProperty('--wheel-x',`${(center.x+1)*this.w/2}px`);document.body.style.setProperty('--wheel-y',`${(1-center.y)*this.h/2}px`);document.body.style.setProperty('--wheel-size',`${size}px`);
-      document.body.style.setProperty('--wheel-visible',center.z>-1&&center.z<1&&Math.abs(center.x)<1.5?'visible':'hidden');
-    }
+  pointCamera(car) {
+    this.camera = this.rig.pointCamera(
+      car,
+      this,
+      this.system.scenario,
+      this.view === 'top' ? overviewLayout(this.h) : null,
+    );
+    if (this.main && this.view === 'driver')
+      positionWheel(this.camera, car, this.w, this.h, THREE, CABIN);
   }
-  draw(car,scenario,options={}){
-    updateWorld(shared,car,scenario,options);this.pointCamera(car);shared.player.visible=this.view!=='driver'&&this.view!=='rear';
-    shared.cabin.visible=this.view==='driver';
-    if(shared.cabin.visible){shared.cabin.position.copy(shared.player.position);shared.cabin.rotation.y=-car.angle;updateCockpit(shared.cabin,car,scenario,options);}
-    const gpu=shared.renderer;
-    const shadowKey=[car.x,car.z,car.angle,car.steer,scenario.side,scenario.length].join(':');
-    if(shadowKey!==shared.shadowKey&&performance.now()-shared.lastShadow>130){gpu.shadowMap.needsUpdate=true;shared.lastShadow=performance.now();shared.shadowKey=shadowKey;}
-    gpu.setRenderTarget(this.main?null:this.target);gpu.setScissorTest(false);
-    if(this.main)gpu.setViewport(0,0,this.w,this.h);
-    gpu.clear();gpu.render(shared.world,this.camera);
-    if(this.main){
-      const panes=shared.panes.filter(p=>!p.canvas.closest('[hidden]')).sort((a,b)=>Number(a.canvas.parentElement.classList.contains('expanded'))-Number(b.canvas.parentElement.classList.contains('expanded')));
-      const zoomed=panes.some(p=>p.canvas.parentElement.classList.contains('expanded'));document.body.classList.toggle('mirror-zoom',zoomed);
-      gpu.setScissorTest(true);for(const pane of panes){
-        if(zoomed&&!pane.canvas.parentElement.classList.contains('expanded'))continue;
-        const rect=pane.canvas.getBoundingClientRect();if(!rect.width||!rect.height)continue;
-        gpu.setViewport(rect.x,this.h-rect.bottom,rect.width,rect.height);gpu.setScissor(rect.x,this.h-rect.bottom,rect.width,rect.height);
-        shared.overlayMaterial.uniforms.image.value=pane.target.texture;shared.overlayMaterial.uniforms.size.value.set(rect.width,rect.height);shared.overlayMaterial.uniforms.radius.value=pane.view==='rear'?9:15;
-        gpu.render(shared.overlay,shared.overlayCamera);
+  draw(car, scenario, options = {}) {
+    this.pointCamera(car);
+    this.system.player.visible = this.view !== 'driver' && this.view !== 'rear';
+    this.system.cabin.visible = this.view === 'driver';
+    this.system.guides.visible =
+      this.main &&
+      Boolean(this.system.frameOptions.guides) &&
+      !this.system.frameOptions.exam &&
+      car.gear === 'R';
+    const gpu = this.system.renderer;
+    gpu.setRenderTarget(this.main ? null : this.target);
+    gpu.setScissorTest(false);
+    if (this.main) gpu.setViewport(0, 0, this.w, this.h);
+    gpu.clear();
+    gpu.render(this.system.world, this.camera);
+    this.system.metrics.views++;
+    if (this.main) {
+      const panes = this.system.panes
+        .filter((p) => !p.canvas.closest('[hidden]'))
+        .sort(
+          (a, b) =>
+            Number(a.canvas.parentElement.classList.contains('expanded')) -
+            Number(b.canvas.parentElement.classList.contains('expanded')),
+        );
+      const zoomed = panes.some((p) =>
+        p.canvas.parentElement.classList.contains('expanded'),
+      );
+      document.body.classList.toggle('mirror-zoom', zoomed);
+      gpu.setScissorTest(true);
+      for (const pane of panes) {
+        if (zoomed && !pane.canvas.parentElement.classList.contains('expanded'))
+          continue;
+        const rect = pane.canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) continue;
+        gpu.setViewport(rect.x, this.h - rect.bottom, rect.width, rect.height);
+        gpu.setScissor(rect.x, this.h - rect.bottom, rect.width, rect.height);
+        this.system.overlayMaterial.uniforms.image.value = pane.target.texture;
+        this.system.overlayMaterial.uniforms.size.value.set(
+          rect.width,
+          rect.height,
+        );
+        this.system.overlayMaterial.uniforms.radius.value =
+          pane.view === 'rear' ? 9 : 15;
+        gpu.render(this.system.overlay, this.system.overlayCamera);
       }
     }
   }
 }
 
+export async function createRenderSystem(canvas) {
+  const assets = await loadVehicleAssets();
+  const system = engine(canvas, assets);
+  system.metrics = {
+    frames: 0,
+    worldUpdates: 0,
+    views: 0,
+    calls: 0,
+    triangles: 0,
+  };
+  system.renderer.info.autoReset = false;
+  return {
+    main: new Renderer(canvas, system),
+    createPane: (canvas) => new Renderer(canvas, system),
+    metrics: system.metrics,
+    beginFrame(car, scenario, options) {
+      system.frameStart = performance.now();
+      system.renderer.info.reset();
+      system.frameOptions = options;
+      updateWorld(system, car, scenario, options);
+      system.metrics.frames++;
+      system.metrics.worldUpdates++;
+      system.metrics.views = 0;
+      system.cabin.position.copy(system.player.position);
+      system.cabin.rotation.y = -car.angle;
+      updateCockpit(system.cabin, car, scenario, options);
+      const shadowKey = [
+        car.x,
+        car.z,
+        car.angle,
+        car.steer,
+        scenario.side,
+        scenario.length,
+      ].join(':');
+      if (
+        shadowKey !== system.shadowKey &&
+        performance.now() - system.lastShadow > 130
+      ) {
+        system.renderer.shadowMap.needsUpdate = true;
+        system.lastShadow = performance.now();
+        system.shadowKey = shadowKey;
+      }
+    },
+    endFrame() {
+      system.metrics.cpuFrameMs = performance.now() - system.frameStart;
+      system.metrics.calls = system.renderer.info.render.calls;
+      system.metrics.triangles = system.renderer.info.render.triangles;
+    },
+  };
+}

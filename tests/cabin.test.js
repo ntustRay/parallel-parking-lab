@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.min.js';
 import {CABIN,createCockpit} from '../cockpit.js';
 import {CABIN_BOUNDS,createCabinShell} from '../cabin-shell.js';
+import {loadModel} from './load-model.mjs';
+
+const model=await loadModel('sedan-cabin.glb');
 
 // Canvas textures don't need a GPU to construct geometry. Only the texture
 // allocation is stubbed; intersections use the actual assembled Three meshes.
 function cockpit(){
   const previous=globalThis.document;
   globalThis.document={createElement:()=>({getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData(){}})})};
-  try{return createCockpit();}finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
+  try{return createCockpit(model);}finally{if(previous===undefined)delete globalThis.document;else globalThis.document=previous;}
 }
 const cabin=cockpit();cabin.updateMatrixWorld(true);
 const eye=new THREE.Vector3(CABIN.eyeX,CABIN.eyeHeight,-CABIN.eyeForward);
