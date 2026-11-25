@@ -9,14 +9,15 @@ if (path.dirname(output) !== root)
   throw Error('Build output must be inside the project');
 const modules = await collectModules(['bootstrap.js']);
 const css = await fs.readFile('style.css', 'utf8'),
-  html = await fs.readFile('index.html', 'utf8');
+  html = await fs.readFile('index.html', 'utf8'),
+  analytics = await fs.readFile('tools/pages-analytics.js', 'utf8');
 const assets = await Promise.all(
   ['sedan-cabin.glb', 'sedan-exterior.glb'].map(async (file) => ({
     file,
     data: await fs.readFile('assets/' + file),
   })),
 );
-const digest = createHash('sha256').update(css).update(html);
+const digest = createHash('sha256').update(css).update(html).update(analytics);
 for (const { file, source } of modules) digest.update(file).update(source);
 for (const { data } of assets) digest.update(data);
 const hash = digest.digest('hex').slice(0, 12);
@@ -45,6 +46,15 @@ await fs.writeFile(path.join(output, hashed('style.css')), css, 'utf8');
 await fs.writeFile(
   path.join(output, 'index.html'),
   html
+    .replace('</head>', () => '<script>' + analytics + '</script></head>')
+    .replace(
+      "event.target instanceof HTMLScriptElement",
+      "event.target instanceof HTMLScriptElement && event.target.id !== 'site-analytics-tag'",
+    )
+    .replace(
+      '<div id="history">',
+      '<p class="footnote">線上版使用 Google Analytics 統計瀏覽量，不傳送練習操作或成績。</p><div id="history">',
+    )
     .replace('href="style.css"', 'href="' + hashed('style.css') + '"')
     .replace('src="bootstrap.js"', 'src="' + hashed('bootstrap.js') + '"'),
   'utf8',
