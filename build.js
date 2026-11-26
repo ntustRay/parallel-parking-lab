@@ -43,6 +43,7 @@ await fs.mkdir(path.join(output, 'assets', hash), { recursive: true });
 for (const { file, data } of assets)
   await fs.writeFile(path.join(output, 'assets', hash, file), data);
 await fs.writeFile(path.join(output, hashed('style.css')), css, 'utf8');
+await fs.copyFile('sitemap.xml', path.join(output, 'sitemap.xml'));
 await fs.writeFile(
   path.join(output, 'index.html'),
   html
